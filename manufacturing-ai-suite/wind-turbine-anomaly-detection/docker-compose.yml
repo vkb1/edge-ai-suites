@@ -111,6 +111,7 @@ services:
       PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
       SSL_CERT_FILE: /run/secrets/ca_certificate.pem
       MODEL_REGISTRY_URL: http://model-registry:8111
+      REST_API_ROOT_PATH: "/ts-api"
     networks:
     - timeseries_network
     volumes:
@@ -184,8 +185,6 @@ services:
       interval: 5m
     networks:
     - timeseries_network
-    ports:
-    - "1883:1883"
     volumes:
     - ./mqtt-broker/mosquitto_devmode.conf:/mosquitto/config/mosquitto.conf:ro
 
@@ -342,9 +341,8 @@ services:
       no_proxy: "ia-grafana,ia-time-series-analytics-microservice,ia-mqtt-broker,${no_proxy}"
       NO_PROXY: "ia-grafana,ia-time-series-analytics-microservice,ia-mqtt-broker,${no_proxy}"
     ports:
-      - "${GRAFANA_PORT}:443"   # HTTPS for Grafana
-      - "5000:5000" # API microservice
-      # - "1883:1883" # MQTT TCP Proxy
+      - "${GRAFANA_PORT}:443"   # HTTPS for Grafana and TS MS Rest API 
+      - "1883:1883" # MQTT TCP Proxy
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
