@@ -3,6 +3,21 @@
 # Copyright (C) 2025 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
+# Default app name
+DEFAULT_APP := windturbine_anomaly_detector
+
+# Check for app override from command line
+ifdef app
+    SAMPLE_APP := $(app)
+else
+    SAMPLE_APP := $(DEFAULT_APP)
+endif
+
+# Make app=value target do nothing
+app-%:
+	@true
+
+export SAMPLE_APP
 
 INCLUDE ?= default_INCLUDE
 
