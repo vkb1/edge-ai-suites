@@ -766,10 +766,10 @@
               "type": "fill"
             }
           ],
-          "measurement": "weld_anomaly_data",
+          "measurement": "weld_analytics_data",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT count(\"Feed\") FROM \"weld_anomaly_data\" ",
+          "query": "SELECT count(\"Feed\") FROM \"weld_analytics_data\" ",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
