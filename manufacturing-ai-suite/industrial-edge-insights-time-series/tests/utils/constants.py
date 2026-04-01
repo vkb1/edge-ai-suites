@@ -293,5 +293,12 @@ MULTIMODAL_DOCKER_PRE_TEARDOWN_WAIT = 5   # seconds before teardown validations
 MULTIMODAL_DOCKER_POST_TEARDOWN_WAIT = 10 # seconds to let containers stop
 MULTIMODAL_DOCKER_FUSION_READY_WAIT = 10  # seconds to ensure fusion logs propagate
 
+# SeaweedFS S3 storage wait durations (in seconds) for multimodal Helm tests
+MULTIMODAL_SEAWEED_WAIT_POD_STABILIZATION = 20   # wait for pod stabilization after startup
+MULTIMODAL_SEAWEED_WAIT_INFLUX_CONSISTENCY = 15  # wait for InfluxDB data consistency
+MULTIMODAL_SEAWEED_WAIT_S3_API_RESPONSE = 10     # wait for S3 API response processing
+MULTIMODAL_SEAWEED_WAIT_S3_POPULATE = 30         # wait for S3 storage to be fully populated
+MULTIMODAL_SEAWEED_WAIT_FILE_VALIDATION = 5      # wait before file content validation
+
 # MediaMTX streaming constants - access via nginx proxy
 MEDIAMTX_STREAM_URL = f"https://localhost:{CONTAINERS['nginx_proxy']['https_port']}/samplestream"
