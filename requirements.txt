@@ -1,0 +1,11 @@
+ultralytics>=8.4.7
+openvino>=2026.0.0
+paddlepaddle>=3.0.0
+paddleocr>=2.9
+paddle2onnx
+huggingface-hub
+opencv-python
+matplotlib
+numpy
+onnxruntime>=1.10.0
+onnx_graphsurgeon>=0.3.27 --extra-index-url=https://pypi.ngc.nvidia.com
