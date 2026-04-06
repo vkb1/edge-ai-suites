@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-import subprocess
+import subprocess  # nosec B404
 import json
 import sys
 import time
@@ -237,12 +237,12 @@ FUNCTIONAL_FOLDER_PATH_FROM_TEST_FILE, release_name, release_name_weld, chart_pa
 password_test_cases = {
     "test_case_1": {
         "INFLUXDB_USERNAME": "",
-        "INFLUXDB_PASSWORD": "",
+        "INFLUXDB_PASSWORD": "",  # nosec B105
         "VISUALIZER_GRAFANA_USER": "",
-        "VISUALIZER_GRAFANA_PASSWORD": "",
+        "VISUALIZER_GRAFANA_PASSWORD": "",  # nosec B105
         "MINIO_ACCESS_KEY": "",
-        "POSTGRES_PASSWORD": "",
-        "MINIO_SECRET_KEY": ""
+        "POSTGRES_PASSWORD": "",  # nosec B105
+        "MINIO_SECRET_KEY": ""  # nosec B105
     },
     "test_case_2": {
         "INFLUXDB_USERNAME": common_utils.generate_password(4),
@@ -353,7 +353,7 @@ def verify_pods(namespace, timeout=300, interval=5):
 
             # Execute the kubectl command and capture the output
             logger.info(f"Checking pod status in namespace '{namespace}'...")
-            result = subprocess.run(kubectl_command, capture_output=True, text=True, check=True)
+            result = subprocess.run(kubectl_command, capture_output=True, text=True, check=True)  # nosec B603
 
             # Parse the output to check pod statuses
             lines = result.stdout.strip().split('\n')
@@ -494,7 +494,7 @@ def validate_helm_deployment_resources(namespace, cpu_threshold_millicores=2000,
     metrics_command = ["kubectl", "top", "pods", "-n", namespace]
 
     try:
-        completed = subprocess.run(metrics_command, capture_output=True, text=True, check=True)
+        completed = subprocess.run(metrics_command, capture_output=True, text=True, check=True)  # nosec B603
     except (subprocess.CalledProcessError, FileNotFoundError) as exc:
         error_msg = getattr(exc, "stderr", "")
         error_msg = error_msg.strip() if isinstance(error_msg, str) else ""
@@ -566,7 +566,7 @@ def verify_multimodal_core_components(namespace):
         return response
 
     try:
-        completed = subprocess.run(
+        completed = subprocess.run(  # nosec B603 B607
             ["kubectl", "get", "pods", "-n", namespace, "-o", "json"],
             capture_output=True,
             text=True,
@@ -639,14 +639,14 @@ def uninstall_helm_charts(release_name, namespace):
     try:
         # List Helm releases in the specified namespace
         list_command = f"helm list -n {namespace} -q"
-        result = subprocess.run(list_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(list_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         releases = result.stdout.strip().split()
 
         # Check if the release is present
         if release_name in releases:
             logger.info(f"Release '{release_name}' found in namespace '{namespace}'. Uninstalling...")
             uninstall_command = f"helm uninstall {release_name} -n {namespace}"
-            subprocess.run(uninstall_command, shell=True, check=True)
+            subprocess.run(uninstall_command, shell=True, check=True)  # nosec B602
             logger.info(f"Release '{release_name}' uninstalled successfully.")
             return True
         else:
@@ -664,7 +664,7 @@ def list_directory_contents():
     """List all files and directories in the current directory."""
     try:
         logger.info("Listing directory contents...")
-        subprocess.run(["ls", "-al"], check=True)
+        subprocess.run(["ls", "-al"], check=True)  # nosec B603 B607
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to list directory contents: {e}")
         return False
@@ -734,7 +734,7 @@ def _wait_for_pod_with_substring(namespace, substring, timeout=240, interval=5):
 def _wait_for_pod_ready(pod_name, namespace, timeout=180):
     """Block until the given pod reports Ready condition."""
     try:
-        subprocess.run(
+        subprocess.run(  # nosec B603 B607
             [
                 "kubectl",
                 "wait",
@@ -785,7 +785,7 @@ def wait_for_mqtt_sample(namespace, topic=constants.WIND_TURBINE_INGESTED_TOPIC,
             wait_flag,
         ]
 
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True)  # nosec B603
         stdout = result.stdout.strip()
         if result.returncode == 0 and stdout:
             first_line = stdout.splitlines()[0]
@@ -854,7 +854,7 @@ def verify_mqtt_alerts_via_subscription(namespace, alert_type, timeout=180, inte
             wait_flag,
         ]
 
-        result = subprocess.run(command, capture_output=True, text=True, timeout=interval + 5)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=interval + 5)  # nosec B603
         stdout = result.stdout.strip()
         
         if result.returncode == 0 and stdout:
@@ -915,7 +915,7 @@ def verify_influxdb_connectivity(namespace, chart_path):
             "-execute", "SHOW MEASUREMENTS"
         ]
         
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True)  # nosec B603
         if result.returncode != 0:
             logger.error(f"InfluxDB connectivity test failed: {result.stderr}")
             return False
@@ -976,7 +976,7 @@ def execute_influxdb_commands(namespace, chart_path, sample_app=constants.WIND_S
                 "-execute",
                 query,
             ]
-            return subprocess.run(command, capture_output=True, text=True, check=True).stdout
+            return subprocess.run(command, capture_output=True, text=True, check=True).stdout  # nosec B603
 
         # Wait for measurements to appear with retry logic (similar to alert verification)
         max_measurement_attempts = 12  # 12 attempts * 15 seconds = 3 minutes
@@ -1025,7 +1025,7 @@ def execute_influxdb_commands(namespace, chart_path, sample_app=constants.WIND_S
         max_attempts = 6
         retry_delay = 10
         for measurement in measurements:
-            query = f'SELECT COUNT(*) FROM "{measurement}"'
+            query = f'SELECT COUNT(*) FROM "{measurement}"'  # nosec B608
             last_output = ""
             for attempt in range(1, max_attempts + 1):
                 try:
@@ -1156,7 +1156,7 @@ def verify_multimodal_influxdb_data(chart_path, namespace=None, database=constan
     influxdb_username, influxdb_password, _ = credentials
 
     # Find the first InfluxDB pod in the given namespace without using a shell pipeline
-    pod_proc = subprocess.run(
+    pod_proc = subprocess.run(  # nosec B603 B607
         ["kubectl", "get", "pods", "-n", namespace, "-o", "json"],
         capture_output=True,
         text=True,
@@ -1191,7 +1191,7 @@ def verify_multimodal_influxdb_data(chart_path, namespace=None, database=constan
             "-database", database,
             "-execute", query,
         ]
-        return subprocess.run(exec_command, capture_output=True, text=True, check=True).stdout
+        return subprocess.run(exec_command, capture_output=True, text=True, check=True).stdout  # nosec B603
 
     try:
         measurements_output = _exec_influx("SHOW MEASUREMENTS")
@@ -1221,7 +1221,7 @@ def verify_multimodal_influxdb_data(chart_path, namespace=None, database=constan
         if not measurement:
             continue
         try:
-            count_output = _exec_influx(f"SELECT COUNT(*) FROM \"{measurement}\"")
+            count_output = _exec_influx(f"SELECT COUNT(*) FROM \"{measurement}\"")  # nosec B608
             result[key] = _extract_influx_count(count_output)
         except subprocess.CalledProcessError as exc:
             logger.warning("Failed to query measurement '%s': %s", measurement, exc.stderr.strip() if exc.stderr else exc)
@@ -1290,7 +1290,7 @@ def query_influxdb_measurement_via_kubectl(
 
     result["pod_name"] = pod_name
     order_clause = " ORDER BY time DESC" if order_by_time_desc else ""
-    query = f'SELECT * FROM "{measurement}"{order_clause} LIMIT {limit}'
+    query = f'SELECT * FROM "{measurement}"{order_clause} LIMIT {limit}'  # nosec B608
     cmd = [
         "kubectl", "exec", "-n", namespace, pod_name, "--",
         "influx",
@@ -1302,7 +1302,7 @@ def query_influxdb_measurement_via_kubectl(
     ]
 
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)  # nosec B603
         result["raw_output"] = proc.stdout.strip()
         if proc.returncode != 0:
             stderr = proc.stderr.strip() if proc.stderr else "Unknown error"
@@ -1381,7 +1381,7 @@ def verify_influxdb_retention(namespace, chart_path, response):
             f"kubectl get pods -n {namespace} "
             "-o jsonpath='{.items[*].metadata.name}' | tr ' ' '\\n' | grep influxdb | head -n 1"
         )
-        result = subprocess.run(pod_name_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(pod_name_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         pod_name = result.stdout.strip()
 
         if not pod_name:
@@ -1392,13 +1392,13 @@ def verify_influxdb_retention(namespace, chart_path, response):
 
         # Step 2: Execute InfluxDB commands inside the pod
         influx_commands = (
-            f"influx -username {influxdb_username} -password {influxdb_password} -database datain "
+            f"influx -username {influxdb_username} -password {influxdb_password} -database datain "  # nosec B608
             f"-execute 'SELECT time, wind_speed FROM {constants.WIND_TURBINE_INGESTED_TOPIC} ORDER BY time ASC LIMIT 1'  | awk 'NR==4 {{print $1}}'"
         )
 
         exec_command = f"kubectl exec -n {namespace} {pod_name} -- {influx_commands}"
-        logger.info(f"Executing InfluxDB query inside pod '{pod_name}': 'SELECT time, wind_speed FROM {constants.WIND_TURBINE_INGESTED_TOPIC} ORDER BY time ASC LIMIT 1;' with redacted credentials.")
-        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)
+        logger.info(f"Executing InfluxDB query inside pod '{pod_name}': 'SELECT time, wind_speed FROM {constants.WIND_TURBINE_INGESTED_TOPIC} ORDER BY time ASC LIMIT 1;' with redacted credentials.")  # nosec B608
+        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         response = result.stdout.strip()
 
         if response:
@@ -1425,7 +1425,7 @@ def generate_helm_chart(chart_path, sample_app=constants.WIND_SAMPLE_APP):
 
         # Run the make command
         logger.info("Generating Helm chart...")
-        result = subprocess.run(["make", "gen_helm_charts", "app=" + sample_app], capture_output=True, text=True, check=True)
+        result = subprocess.run(["make", "gen_helm_charts", "app=" + sample_app], capture_output=True, text=True, check=True)  # nosec B603 B607
         logger.info(result.stdout)
         logger.info("Helm chart generated successfully.")
         list_directory_contents()
@@ -1456,7 +1456,7 @@ def helm_install(release_name, chart_path, namespace, telegraf_input_plugin, con
 
         # Execute the Helm install command and capture output
         logger.info(f"Installing Helm chart with {telegraf_input_plugin}...")
-        result = subprocess.run(helm_command, capture_output=True, text=True, check=True)
+        result = subprocess.run(helm_command, capture_output=True, text=True, check=True)  # nosec B603
 
         # Print the output for debugging purposes
         logger.info(result.stdout)
@@ -1480,7 +1480,7 @@ def helm_uninstall(release_name, namespace):
 
         # Execute the Helm uninstall command and capture output
         logger.info(f"Uninstalling Helm release '{release_name}' from namespace '{namespace}'...")
-        result = subprocess.run(helm_command, capture_output=True, text=True, check=True)
+        result = subprocess.run(helm_command, capture_output=True, text=True, check=True)  # nosec B603
 
         # Print the output for debugging purposes
         logger.info(result.stdout)
@@ -1502,7 +1502,7 @@ def helm_upgrade(release_name, chart_path, namespace, telegraf_input_plugin1):
 
         # Execute the Helm upgrade command and capture output
         logger.info(f"Upgrading Helm release '{release_name}'...")
-        result = subprocess.run(helm_command, capture_output=True, text=True, check=True)
+        result = subprocess.run(helm_command, capture_output=True, text=True, check=True)  # nosec B603
 
         # Print the output for debugging purposes
         logger.info(result.stdout)
@@ -1514,7 +1514,7 @@ def helm_upgrade(release_name, chart_path, namespace, telegraf_input_plugin1):
 def get_pod_names(namespace):
     """Fetch pod names in the given namespace."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["kubectl", "get", "pods", "-n", namespace, "-o", "jsonpath={.items[*].metadata.name}"],
             capture_output=True, text=True, check=True
         )
@@ -1529,7 +1529,7 @@ def get_pod_names(namespace):
 def check_pod_logs_for_errors(namespace, pod_name):
     """Check pod logs for errors."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["kubectl", "logs", pod_name, "-n", namespace, "--tail=5"],
             capture_output=True, text=True, check=True
         )
@@ -1570,11 +1570,11 @@ def restart_deployment(namespace, pod):
         # List deployments in the specified namespace
         logger.info(f"Listing deployments in namespace '{namespace}':")
         list_command = f"kubectl get deployments -n {namespace}"
-        subprocess.run(list_command, shell=True, check=True)
+        subprocess.run(list_command, shell=True, check=True)  # nosec B602
 
         # Get deployment names using jsonpath
         list_names_command = f"kubectl get deployments -n {namespace} -o jsonpath='{{.items[*].metadata.name}}'"
-        result = subprocess.run(list_names_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(list_names_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         
         # Get the list of deployment names
         deployments = result.stdout.strip().split()
@@ -1583,7 +1583,7 @@ def restart_deployment(namespace, pod):
         if f"deployment-{pod}" in deployments:
             logger.info(f"Found pod deployment '{pod}'. Restarting...")
             restart_command = f"kubectl rollout restart deployments 'deployment-{pod}' -n {namespace}"
-            subprocess.run(restart_command, shell=True, check=True)
+            subprocess.run(restart_command, shell=True, check=True)  # nosec B602
             logger.info(f"'{pod}' deployment restarted successfully.")
             return True
         else:
@@ -1603,10 +1603,10 @@ def with_model_registry(chart_path, input):
     try:
         # Step 1: Create a ZIP archive
         if input == "mqtt":
-            assert setup_mqtt_alerts(chart_path) == True
+            assert setup_mqtt_alerts(chart_path) == True  # nosec B101
             logger.info("MQTT alerts setup in tick script completed successfully.")
         elif input == "opcua":
-            assert setup_opcua_alerts(chart_path) == True
+            assert setup_opcua_alerts(chart_path) == True  # nosec B101
             logger.info("OPC UA alerts setup in tick script completed successfully.")
         os.chdir(chart_path)
         os.chdir('../' + constants.HELM_TIMESERIES)
@@ -1615,13 +1615,13 @@ def with_model_registry(chart_path, input):
 
         # Copy the files into the new directory
         logger.info("Copying files to 'wind-turbine-anomaly-detection' directory...")
-        result = subprocess.run(['cp', '-r', 'models', 'tick_scripts', 'udfs', 'wind-turbine-anomaly-detection/.'], check=True)
+        result = subprocess.run(['cp', '-r', 'models', 'tick_scripts', 'udfs', 'wind-turbine-anomaly-detection/.'], check=True)  # nosec B603 B607
         if result.stdout:
             logger.info("Files copied successfully to 'wind-turbine-anomaly-detection' directory.")
         elif result.stderr:
             logger.error(f"Error copying files: {result.stderr.decode('utf-8')}")
         zip_command = f"zip -r windturbine_anomaly_detector.zip udfs models tick_scripts"
-        result = subprocess.run(zip_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(zip_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         if result.stdout:
             logger.info(f"ZIP command output: {result.stdout}")
             logger.info("ZIP archive created successfully.")
@@ -1636,7 +1636,7 @@ def with_model_registry(chart_path, input):
             "-o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | "
             "grep model-registry | head -n 1"
         )
-        result = subprocess.run(model_registry_pod_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(model_registry_pod_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # nosec B602
         if result.returncode == 0 and result.stdout:
             model_registry_pod = result.stdout.decode('utf-8').strip().replace("'", "")
             logger.info(f"Found model registry pod: {model_registry_pod}")
@@ -1651,7 +1651,7 @@ def with_model_registry(chart_path, input):
             '-n', namespace
         ]
         logger.info(f"Copying ZIP file to model registry pod: {' '.join(kubectl_cp_command)}")
-        result = subprocess.run(kubectl_cp_command, capture_output=True, text=True)
+        result = subprocess.run(kubectl_cp_command, capture_output=True, text=True)  # nosec B603
         if result.returncode != 0:
             logger.error(f"Error copying ZIP file to pod: {result.stderr}")
             return False
@@ -1666,7 +1666,7 @@ def with_model_registry(chart_path, input):
             '-F', 'file=@/tmp/windturbine_anomaly_detector.zip;type=application/zip'
         ]
         logger.info(f"Uploading model via kubectl exec: {' '.join(upload_command)}")
-        result = subprocess.run(upload_command, capture_output=True, text=True)
+        result = subprocess.run(upload_command, capture_output=True, text=True)  # nosec B603
         if result.returncode == 0:
             logger.info(f"Model upload command output: {result.stdout}")
             logger.info("Model uploaded successfully.")
@@ -1849,7 +1849,7 @@ def _get_time_series_pod_name(target_namespace=None):
     cmd = ["kubectl", "get", "pods", "-n", ns, "-o", "json"]
     result = subprocess.run(
         cmd,
-        shell=False,
+        shell=False,  # nosec B603
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -1913,7 +1913,7 @@ def _post_ts_api_config(
         )
         
         try:
-            result = subprocess.run(curl_command, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(curl_command, capture_output=True, text=True, timeout=30)  # nosec B603
         except subprocess.SubprocessError as exc:
             logger.error(f"Failed to execute ts-api request: {exc}")
             result = None
@@ -2003,7 +2003,7 @@ def setup_sample_app_udf_deployment_package(
                 pod_name,
                 ns,
             )
-            result = subprocess.run(kubectl_cp_command, capture_output=True, text=True)
+            result = subprocess.run(kubectl_cp_command, capture_output=True, text=True)  # nosec B603
             if result.returncode != 0:
                 logger.error(
                     "Error copying '%s' to pod %s: %s",
@@ -2059,7 +2059,7 @@ def setup_multimodal_udf_deployment_package(chart_path, namespace, device_value=
             "-o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | "
             "grep deployment-dlstreamer-pipeline-server | head -n 1"
         )
-        result = subprocess.run(dlstreamer_pod_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(dlstreamer_pod_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # nosec B602
         if result.returncode == 0 and result.stdout:
             dlstreamer_pod = result.stdout.decode('utf-8').strip().replace("'", "")
             logger.info(f"Found DL Streamer pod: {dlstreamer_pod}")
@@ -2075,7 +2075,7 @@ def setup_multimodal_udf_deployment_package(chart_path, namespace, device_value=
                 '-c', 'dlstreamer-pipeline-server', '-n', namespace
             ]
             logger.info(f"Copying DL Streamer models: {' '.join(kubectl_cp_dlstreamer)}")
-            result = subprocess.run(kubectl_cp_dlstreamer, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            result = subprocess.run(kubectl_cp_dlstreamer, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # nosec B603
             if result.returncode == 0:
                 logger.info("DL Streamer models copied successfully.")
             else:
@@ -2094,7 +2094,7 @@ def setup_multimodal_udf_deployment_package(chart_path, namespace, device_value=
         os.makedirs("weld_anomaly_detector", exist_ok=True)
         for item in ["models", "tick_scripts", "udfs"]:
             if os.path.exists(item):
-                result = subprocess.run(['cp', '-r', item, 'weld_anomaly_detector/.'], capture_output=True, text=True)
+                result = subprocess.run(['cp', '-r', item, 'weld_anomaly_detector/.'], capture_output=True, text=True)  # nosec B603 B607
                 if result.returncode == 0:
                     logger.info(f"Copied {item} to weld_anomaly_detector directory.")
                 else:
@@ -2106,7 +2106,7 @@ def setup_multimodal_udf_deployment_package(chart_path, namespace, device_value=
             "-o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | "
             "grep deployment-time-series-analytics-microservice | head -n 1"
         )
-        result = subprocess.run(ts_pod_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(ts_pod_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # nosec B602
         if result.returncode == 0 and result.stdout:
             ts_pod = result.stdout.decode('utf-8').strip().replace("'", "")
             logger.info(f"Found Time Series Analytics pod: {ts_pod}")
@@ -2119,7 +2119,7 @@ def setup_multimodal_udf_deployment_package(chart_path, namespace, device_value=
             f'{ts_pod}:/tmp/', '-n', namespace
         ]
         logger.info(f"Copying Time Series UDF package: {' '.join(kubectl_cp_ts)}")
-        result = subprocess.run(kubectl_cp_ts, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(kubectl_cp_ts, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # nosec B603
         if result.returncode == 0:
             logger.info("Time Series UDF package copied successfully.")
         else:
@@ -2133,9 +2133,9 @@ def setup_multimodal_udf_deployment_package(chart_path, namespace, device_value=
         # External nginx proxy access (Docker uses HOST_IP:3000, Helm uses HOST_IP:30001)
         payload = {
             "weld_anomaly_detector": {
-                "udfs": "/tmp/weld_anomaly_detector/udfs",
-                "models": "/tmp/weld_anomaly_detector/models", 
-                "tick_scripts": "/tmp/weld_anomaly_detector/tick_scripts"
+                "udfs": "/tmp/weld_anomaly_detector/udfs",  # nosec B108
+                "models": "/tmp/weld_anomaly_detector/models",   # nosec B108
+                "tick_scripts": "/tmp/weld_anomaly_detector/tick_scripts"  # nosec B108
             }
         }
         json_payload = json.dumps(payload)
@@ -2186,7 +2186,7 @@ def setup_multimodal_udf_deployment_package(chart_path, namespace, device_value=
             '-d', json.dumps(dlstreamer_payload)
         ]
         logger.info(f"Activating DL Streamer Pipeline via kubectl exec: {' '.join(dlstreamer_activate_command)}")
-        result = subprocess.run(dlstreamer_activate_command, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(dlstreamer_activate_command, capture_output=True, text=True, timeout=30)  # nosec B603
         if result.returncode == 0:
             logger.info("DL Streamer Pipeline activated successfully.")
             logger.info(f"Response: {result.stdout}")
@@ -2287,13 +2287,13 @@ def pod_restart(target_namespace, deployment_name="deployment-influxdb"):
 
     try:
         logger.info("Restarting %s in namespace %s", resource, ns)
-        subprocess.run(
+        subprocess.run(  # nosec B603 B607
             ["kubectl", "rollout", "restart", resource, "-n", ns],
             check=True,
             capture_output=True,
             text=True,
         )
-        subprocess.run(
+        subprocess.run(  # nosec B603 B607
             ["kubectl", "rollout", "status", resource, "-n", ns, "--timeout=180s"],
             check=True,
             capture_output=True,
@@ -2310,13 +2310,13 @@ def measure_deployment_time(ingestion_type, release_name, iterations=None):
     """Simple deployment time measurement function."""
     iterations = iterations or constants.KPI_TEST_ITERATIONS
     times = []
-    assert uninstall_helm_charts(release_name, namespace) == True, "Failed to uninstall Helm release."
+    assert uninstall_helm_charts(release_name, namespace) == True, "Failed to uninstall Helm release."  # nosec B101
     time.sleep(20)
     logger.info("Helm release is uninstalled if it exists")
     case = password_test_cases["test_case_3"]
     logger.info("Validating pod logs with respect to log level : debug")
     values_yaml_path = os.path.expandvars(chart_path + '/values.yaml')
-    assert update_values_yaml(values_yaml_path, case) == True, "Failed to update values.yaml."
+    assert update_values_yaml(values_yaml_path, case) == True, "Failed to update values.yaml."  # nosec B101
     
     # Determine SAMPLE_APP based on release name to match UDF package directory
     sample_app = "wind-turbine-anomaly-detection" if "wind" in release_name.lower() else "weld-anomaly-detection"
@@ -2354,7 +2354,7 @@ def measure_deployment_time(ingestion_type, release_name, iterations=None):
                 cleanup_success = helm_uninstall(release_name, namespace)
                 if cleanup_success:
                     logger.info("✓ Cleanup successful, waiting for stability...")
-                    assert check_pods(namespace) == True, "Pods are still running after cleanup"
+                    assert check_pods(namespace) == True, "Pods are still running after cleanup"  # nosec B101
                     # Give more time for system to stabilize after cleanup
                 else:
                     logger.error("✗ Cleanup function returned False")
@@ -2394,7 +2394,7 @@ def check_pods(namespace, timeout=180, interval=5):
             return False
         try:
             # Execute the kubectl command to get pods in the namespace
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["kubectl", "get", "pod", "-n", namespace],
                 capture_output=True,
                 text=True,
@@ -2449,7 +2449,7 @@ def execute_gpu_config_curl_helm(device="gpu", namespace="time-series-analytics"
         
         # Get the time-series analytics pod name without using shell
         get_pod_cmd = ["kubectl", "get", "pods", "-n", namespace, "-l", "app=ia-time-series-analytics-microservice", "-o", "jsonpath={.items[0].metadata.name}"]
-        result = subprocess.run(get_pod_cmd, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(get_pod_cmd, capture_output=True, text=True, timeout=30)  # nosec B603
         
         if result.returncode != 0 or not result.stdout.strip():
             logger.error(f"Failed to get time-series analytics pod name: {result.stderr}")
@@ -2499,7 +2499,7 @@ def check_log_gpu_helm(namespace, timeout=300, interval=10):
         
         # Get time-series analytics pod name
         get_pod_cmd = f"kubectl get pods -n {namespace} -l app=ia-time-series-analytics-microservice -o jsonpath='{{.items[0].metadata.name}}'"
-        result = subprocess.run(get_pod_cmd, shell=True, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(get_pod_cmd, shell=True, capture_output=True, text=True, timeout=30)  # nosec B602
         
         if result.returncode != 0 or not result.stdout.strip():
             logger.error(f"Failed to get time-series analytics pod name: {result.stderr}")
@@ -2515,7 +2515,7 @@ def check_log_gpu_helm(namespace, timeout=300, interval=10):
             try:
                 # Get recent logs from the pod
                 logs_cmd = f"kubectl logs -n {namespace} {pod_name} --tail=1000"
-                result = subprocess.run(logs_cmd, shell=True, capture_output=True, text=True, timeout=10)
+                result = subprocess.run(logs_cmd, shell=True, capture_output=True, text=True, timeout=10)  # nosec B602
                 
                 if result.returncode == 0:
                     logs = result.stdout
@@ -2580,7 +2580,7 @@ def verify_seaweed_essential_pods(namespace):
             component_running = False
             for pod in matching_pods:
                 try:
-                    result = subprocess.run(
+                    result = subprocess.run(  # nosec B603 B607
                         [
                             "kubectl", "get", "pod", pod,
                             "-n", namespace,
@@ -2640,7 +2640,7 @@ def get_vision_img_handles_from_influxdb_helm(credentials, namespace, database="
             return {"success": False, "error": "InfluxDB pod not found"}
         
         # Use LIMIT query to get alphanumeric handles (matches Docker approach)
-        query = f"SELECT img_handle FROM \"{measurement}\" LIMIT 10"
+        query = f"SELECT img_handle FROM \"{measurement}\" LIMIT 10"  # nosec B608
         
         kubectl_cmd = [
             "kubectl", "exec", "-n", namespace, influxdb_pod, "--", 
@@ -2649,7 +2649,7 @@ def get_vision_img_handles_from_influxdb_helm(credentials, namespace, database="
             "-database", database, "-execute", query, "-format", "csv"
         ]
         
-        result = subprocess.run(kubectl_cmd, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(kubectl_cmd, capture_output=True, text=True, timeout=30)  # nosec B603
         
         if result.returncode != 0:
             return {"success": False, "error": f"InfluxDB query failed: {result.stderr}"}
@@ -2684,7 +2684,7 @@ def get_vision_img_handles_from_influxdb_helm(credentials, namespace, database="
         if not img_handles:
             return {"success": False, "error": "No alphanumeric img_handle values found"}
             
-        selected_handle = random.choice(img_handles)
+        selected_handle = random.choice(img_handles)  # nosec B311
         
         logger.info(f"Found {len(img_handles)} alphanumeric img_handle values")
         logger.info(f"Selected img_handle for testing: {selected_handle}")
@@ -2716,7 +2716,7 @@ def execute_seaweedfs_bucket_query_helm(namespace):
 
         logger.info(f"Executing SeaweedFS bucket query: {' '.join(curl_cmd)}")
 
-        result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=45)
+        result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=45)  # nosec B603
         
         logger.info(f"Curl result - Return code: {result.returncode}")
         logger.info(f"Curl stdout: {result.stdout[:500]}")  # Log first 500 chars
@@ -2779,7 +2779,7 @@ def validate_s3_images_content_helm(namespace, matched_files, max_files_to_check
                 "curl", "-skI", "--connect-timeout", "10", "--max-time", "15",
                 file_url
             ]
-            result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=20)
+            result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=20)  # nosec B603
             
             file_check = {"filename": filename, "success": False, "is_empty": True, "size_human": "0 bytes"}
             

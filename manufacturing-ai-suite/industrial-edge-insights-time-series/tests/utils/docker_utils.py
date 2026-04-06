@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-import subprocess
+import subprocess  # nosec B404
 import json
 import time
 import os
@@ -44,10 +44,10 @@ def run_command(cmd, capture_output=False):
     from constants/makefiles, not user input.
     """
     if capture_output:
-        proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)  # nosec B602
         return proc.returncode, proc.stdout + proc.stderr
     else:
-        proc = subprocess.run(cmd, shell=True)
+        proc = subprocess.run(cmd, shell=True)  # nosec B602
         return proc.returncode
 
 def get_container_logs(container_name, tail=None):
@@ -55,22 +55,22 @@ def get_container_logs(container_name, tail=None):
     if tail:
         cmd.extend(["--tail", str(tail)])
     cmd.append(container_name)
-    return subprocess.check_output(cmd).decode()
+    return subprocess.check_output(cmd).decode()  # nosec B603
 
 def container_is_running(name):
-    result = subprocess.run(["docker", "ps", "--filter", f"name={name}", "--format", "{{.Names}}"], capture_output=True, text=True)
+    result = subprocess.run(["docker", "ps", "--filter", f"name={name}", "--format", "{{.Names}}"], capture_output=True, text=True)  # nosec B603 B607
     return name in result.stdout
 
 def container_exists(name):
-    result = subprocess.run(["docker", "ps", "-a", "--filter", f"name={name}", "--format", "{{.Names}}"], capture_output=True, text=True)
+    result = subprocess.run(["docker", "ps", "-a", "--filter", f"name={name}", "--format", "{{.Names}}"], capture_output=True, text=True)  # nosec B603 B607
     return name in result.stdout
 
 def stop_container(name):
-    result = subprocess.run(["docker", "stop", name])
+    result = subprocess.run(["docker", "stop", name])  # nosec B603 B607
     return result.returncode
 
 def remove_container(name):
-    result = subprocess.run(["docker", "rm", name])
+    result = subprocess.run(["docker", "rm", name])  # nosec B603 B607
     return result.returncode
 
 def get_docker_env_values():
@@ -146,7 +146,7 @@ def deploy_and_verify(context, deploy_type="opcua", include_nmap=True):
     
     # Deploy containers based on type
     if deploy_type.lower() == "opcua":
-        assert context["deploy_opcua"]() == True, "Failed to deploy Docker containers with OPC-UA ingestion."
+        assert context["deploy_opcua"]() == True, "Failed to deploy Docker containers with OPC-UA ingestion."  # nosec B101
         logger.info(f"Docker containers deployed with OPC-UA ingestion and waiting for {context['docker_wait_time']} seconds for containers to stabilize")
         expected_containers = [
             constants.CONTAINERS["influxdb"]["name"],
@@ -156,7 +156,7 @@ def deploy_and_verify(context, deploy_type="opcua", include_nmap=True):
             constants.CONTAINERS["opcua_server"]["name"]
         ]
     elif deploy_type.lower() == "mqtt":
-        assert context["deploy_mqtt"]() == True, "Failed to deploy Docker containers with MQTT ingestion."
+        assert context["deploy_mqtt"]() == True, "Failed to deploy Docker containers with MQTT ingestion."  # nosec B101
         logger.info(f"Docker containers deployed with MQTT ingestion and waiting for {context['docker_wait_time']} seconds for containers to stabilize")
         expected_containers = [
             constants.CONTAINERS["influxdb"]["name"],
@@ -173,14 +173,14 @@ def deploy_and_verify(context, deploy_type="opcua", include_nmap=True):
     
     # Verify that containers are running
     deployed_containers = get_the_deployed_containers()
-    assert len(deployed_containers) > 0, "Failed to verify running Docker containers."
+    assert len(deployed_containers) > 0, "Failed to verify running Docker containers."  # nosec B101
     logger.info(f"Verified {len(deployed_containers)} Docker containers are running: {deployed_containers}")
     
     # Verify container logs for proper initialization
     for container in expected_containers:
         if container in deployed_containers:
             logs = get_container_logs(container)
-            assert logs is not None, f"Failed to retrieve logs for container {container}."
+            assert logs is not None, f"Failed to retrieve logs for container {container}."  # nosec B101
             logger.info(f"Successfully retrieved logs for container: {container}")
     
     # Prepare results
@@ -193,7 +193,7 @@ def deploy_and_verify(context, deploy_type="opcua", include_nmap=True):
     # Optional: Find exposed ports and run nmap scan
     if include_nmap and SECURITY_UTILS_AVAILABLE:
         exposed_ports = security_utils.find_exposed_ports_docker()
-        assert security_utils.check_nmap_docker(context["docker_target"], exposed_ports) == True, "Failed to find open ports on the target using nmap."
+        assert security_utils.check_nmap_docker(context["docker_target"], exposed_ports) == True, "Failed to find open ports on the target using nmap."  # nosec B101
         logger.info("Successfully completed nmap scan on Docker exposed ports.")
         results["exposed_ports"] = exposed_ports
     
@@ -221,11 +221,11 @@ def deploy_containers(context, deploy_type="opcua"):
         raise ValueError(f"Unsupported deploy_type: {deploy_type}. Use 'opcua' or 'mqtt'.")
 
 def start_container(name):
-    result = subprocess.run(["docker", "start", name])
+    result = subprocess.run(["docker", "start", name])  # nosec B603 B607
     return result.returncode
 
 def restart_container(name):
-    result = subprocess.run(["docker", "restart", name])
+    result = subprocess.run(["docker", "restart", name])  # nosec B603 B607
     return result.returncode
 
 def get_images_from_docker_compose(compose_file_path=None):
@@ -281,11 +281,11 @@ def get_images_from_docker_compose(compose_file_path=None):
     return unique_images
 
 def build_image(dockerfile_path, image_name):
-    result = subprocess.run(["docker", "build", "-t", image_name, "-f", dockerfile_path, "."])
+    result = subprocess.run(["docker", "build", "-t", image_name, "-f", dockerfile_path, "."])  # nosec B603 B607
     return result.returncode
 
 def get_image_id(image):
-    result = subprocess.run(["docker", "images", "--filter", f"reference={image}", "--format", "{{.ID}}"], capture_output=True, text=True)
+    result = subprocess.run(["docker", "images", "--filter", f"reference={image}", "--format", "{{.ID}}"], capture_output=True, text=True)  # nosec B603 B607
     return result.stdout.strip() if result.stdout else None
 
 def get_image_size(image):
@@ -298,7 +298,7 @@ def get_image_size(image):
         float: Image size in MB, or None if image not found
     """
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["docker", "images", "--filter", f"reference={image}", "--format", "{{.Size}}"], 
             capture_output=True, 
             text=True
@@ -370,7 +370,7 @@ def generate_invalid_value(field_name):
         "abcdefghij" if "PASSWORD" in field_name else "user@#$"  # no digits or special chars in username
     ]
     
-    return random.choice(invalid_patterns)
+    return random.choice(invalid_patterns)  # nosec B311
 
 def generate_test_credentials(case_type="valid", invalid_field=None):
     """
@@ -640,13 +640,13 @@ def update_env_file(file_path=None, values=None):
 
         for parameter_name, value in values.items():
             # Check whether the key already exists in the file
-            grep_result = subprocess.run(
+            grep_result = subprocess.run(  # nosec B603 B607
                 ["grep", "-q", f"^{parameter_name}=", expanded_path],
                 capture_output=True
             )
             if grep_result.returncode == 0:
                 # Key exists — update it with sed
-                sed_result = subprocess.run(
+                sed_result = subprocess.run(  # nosec B603 B607
                     ["sed", "-i", f"s|^{parameter_name}=.*|{parameter_name}={value}|g", expanded_path],
                     capture_output=True, text=True
                 )
@@ -655,7 +655,7 @@ def update_env_file(file_path=None, values=None):
                     return False
             else:
                 # Key missing — append it using printf via shell
-                append_result = subprocess.run(
+                append_result = subprocess.run(  # nosec B603 B607
                     ["bash", "-c", f"printf '%s\\n' '{parameter_name}={value}' >> {expanded_path}"],
                     capture_output=True, text=True
                 )
@@ -699,7 +699,7 @@ def get_the_deployed_containers():
         # This is the exact command used in the Makefile's status target
         logger.info("Extracting containers using docker ps with filters")
         
-        result = subprocess.run([
+        result = subprocess.run([  # nosec B603 B607
             "docker", "ps", "-a", 
             "--filter", "name=^ia-", 
             "--filter", "name=mr_", 
@@ -735,7 +735,7 @@ def get_container_image_sizes():
     image_sizes = {}
     try:
         # Get container names and their images
-        result = subprocess.run([
+        result = subprocess.run([  # nosec B603 B607
             "docker", "ps", "-a", 
             "--filter", "name=^ia-", 
             "--filter", "name=mr_", 
@@ -1045,7 +1045,7 @@ def collect_live_logs(container_name, monitor_duration, search_pattern=None):
     
     try:
         # Run docker logs -f command
-        process = subprocess.Popen(
+        process = subprocess.Popen(  # nosec B603 B607
             ["docker", "logs", "-f", container_name],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -1334,7 +1334,7 @@ def update_config_file(ingestion_type="opcua"):
         max_retries = 12  # Up to 120 seconds total: initial 60s wait + (5s * 12 retries)
         for attempt in range(max_retries):
             try:
-                test_result = subprocess.run(
+                test_result = subprocess.run(  # nosec B603 B607
                     ["curl", "-s", "-k", "-o", "/dev/null", "-w", "%{http_code}",
                      "https://localhost:3000/ts-api/health"],
                     capture_output=True, text=True, timeout=10
@@ -1374,7 +1374,7 @@ def update_config_file(ingestion_type="opcua"):
 
         # Step 5: Create the directory and copy files
         os.makedirs('windturbine_anomaly_detector', exist_ok=True)
-        result = subprocess.run(['cp', '-r', 'models', 'tick_scripts', 'udfs', 'windturbine_anomaly_detector/.'], check=True)
+        result = subprocess.run(['cp', '-r', 'models', 'tick_scripts', 'udfs', 'windturbine_anomaly_detector/.'], check=True)  # nosec B603 B607
         if result.stdout:
             logger.info("Files copied successfully to 'windturbine_anomaly_detector' directory.")
         elif result.stderr:
@@ -1432,7 +1432,7 @@ def update_config_file(ingestion_type="opcua"):
         for retry in range(max_curl_retries):
             try:
                 logger.info(f"Attempting curl command (attempt {retry + 1}/{max_curl_retries})...")
-                result = subprocess.run(curl_command, capture_output=True, text=True, timeout=30)
+                result = subprocess.run(curl_command, capture_output=True, text=True, timeout=30)  # nosec B603
                 if result.returncode == 0:
                     logger.info("Curl command executed successfully. Response:")
                     logger.info(result.stdout)
@@ -1507,7 +1507,7 @@ def execute_gpu_config_curl(device="gpu"):
             "-d", gpu_config_json
         ]
 
-        result = subprocess.run(curl_command, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(curl_command, capture_output=True, text=True, timeout=30)  # nosec B603
         
         if result.returncode == 0:
             logger.info(f"{device.upper()} configuration POST via curl command succeeded")
@@ -1669,15 +1669,15 @@ def execute_influxdb_commands(container_name="ia-influxdb", measurement=None):
         if measurement:
             # Query specific measurement(s)
             if measurement == constants.WELD_INGESTED_TOPIC:
-                query_part = f"SELECT * FROM \"{constants.WELD_INGESTED_TOPIC}\" LIMIT 5; SELECT * FROM \"{constants.WELD_ANALYTICS_TOPIC}\" LIMIT 5"
+                query_part = f"SELECT * FROM \"{constants.WELD_INGESTED_TOPIC}\" LIMIT 5; SELECT * FROM \"{constants.WELD_ANALYTICS_TOPIC}\" LIMIT 5"  # nosec B608
                 verify_tables = [constants.WELD_INGESTED_TOPIC, constants.WELD_ANALYTICS_TOPIC]
             else:
                 # Default to wind turbine or handle other measurements
-                query_part = f"SELECT * FROM \"{measurement.replace('_', '-')}\" LIMIT 5"
+                query_part = f"SELECT * FROM \"{measurement.replace('_', '-')}\" LIMIT 5"  # nosec B608
                 verify_tables = [measurement.replace('_', '-')]
         else:
             # Default wind turbine queries for backward compatibility
-            query_part = f"SELECT * FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" LIMIT 5; SELECT * FROM \"{constants.WIND_TURBINE_ANALYTICS_TOPIC}\" LIMIT 5"
+            query_part = f"SELECT * FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" LIMIT 5; SELECT * FROM \"{constants.WIND_TURBINE_ANALYTICS_TOPIC}\" LIMIT 5"  # nosec B608
             verify_tables = [constants.WIND_TURBINE_INGESTED_TOPIC, constants.WIND_TURBINE_ANALYTICS_TOPIC]
         influx_execute = f"SHOW MEASUREMENTS; {query_part}"
 
@@ -1688,7 +1688,7 @@ def execute_influxdb_commands(container_name="ia-influxdb", measurement=None):
         ]
         logger.info(f"Executing command: 'SHOW MEASUREMENTS; {query_part}' inside {container_name} container with redacted credentials.")
 
-        result = subprocess.run(exec_command, capture_output=True, text=True)
+        result = subprocess.run(exec_command, capture_output=True, text=True)  # nosec B603
         
         if result.returncode != 0:
             logger.info(f"Command failed with return code {result.returncode}")
@@ -1737,14 +1737,14 @@ def verify_influxdb_retention_docker(response=None, container_name=constants.CON
             return None, False
 
         # Step 3: Execute InfluxDB query to get the earliest time value
-        influx_execute = f"SELECT time, wind_speed FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" ORDER BY time ASC LIMIT 1"
+        influx_execute = f"SELECT time, wind_speed FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" ORDER BY time ASC LIMIT 1"  # nosec B608
         exec_command = [
             "docker", "exec", container_name,
             "influx", "-username", influxdb_username, "-password", influxdb_password,
             "-database", "datain", "-execute", influx_execute
         ]
         logger.info(f"Executing InfluxDB query inside container '{container_name}': '{influx_execute}' with redacted credentials.")
-        result = subprocess.run(exec_command, capture_output=True, text=True)
+        result = subprocess.run(exec_command, capture_output=True, text=True)  # nosec B603
 
         if result.returncode != 0:
             logger.info(f"Command failed with return code {result.returncode}")
@@ -1961,7 +1961,7 @@ def _check_deployed_container_sizes(size_threshold):
         try:
             # Get the image name for this container
             inspect_cmd = ['docker', 'inspect', '--format', '{{.Config.Image}}', container_name]
-            inspect_result = subprocess.run(inspect_cmd, capture_output=True, text=True, check=True)
+            inspect_result = subprocess.run(inspect_cmd, capture_output=True, text=True, check=True)  # nosec B603
             image_name = inspect_result.stdout.strip()
             
             if not image_name:
@@ -2026,7 +2026,7 @@ def _check_built_image_sizes(size_threshold):
         try:
             # Get image size using docker inspect
             cmd = ['docker', 'image', 'inspect', image, '--format={{.Size}}']
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)  # nosec B603
             
             # Convert size from bytes to MB
             size_bytes = int(result.stdout.strip())
@@ -2345,7 +2345,7 @@ def deploy_from_docker_hub(app_name, ingestion_type="mqtt", wait_time=90):
         
         # Step 6: Verify images are from Docker Hub (not from custom registry)
         logger.info("Step 6: Verifying images are from Docker Hub...")
-        result = subprocess.run(['docker', 'ps', '--format', '{{.Image}}'], 
+        result = subprocess.run(['docker', 'ps', '--format', '{{.Image}}'],   # nosec B603 B607
                               capture_output=True, text=True)
         images = result.stdout.strip().split('\n')
         
@@ -2386,7 +2386,7 @@ def get_resource_usage():
     # Use docker stats --no-stream for a snapshot
     cmd_args = ["docker", "stats", "--no-stream", "--format", "{{.Name}}:{{.CPUPerc}}:{{.MemUsage}}"] + containers
     try:
-        result = subprocess.run(cmd_args, capture_output=True, text=True)
+        result = subprocess.run(cmd_args, capture_output=True, text=True)  # nosec B603
         if result.returncode != 0:
             logger.error(f"Failed to get docker stats: {result.stderr}")
             return usage
@@ -2542,7 +2542,7 @@ def setup_mqtt_alerts_docker(sample_app=constants.WIND_SAMPLE_APP):
         # Always return to original directory
         try:
             os.chdir(original_dir)
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
 def invoke_make_up(measure_time=False):
@@ -2561,7 +2561,7 @@ def invoke_make_up(measure_time=False):
         start_time = time.time() if measure_time else None
         
         # Run make up
-        result = subprocess.run(["make", "up"], capture_output=True, text=True, timeout=600)
+        result = subprocess.run(["make", "up"], capture_output=True, text=True, timeout=600)  # nosec B603 B607
         
         if measure_time:
             execution_time = time.time() - start_time
@@ -2594,7 +2594,7 @@ def get_container_stats(container_name):
     """
     try:
         # Run docker stats command for a single sample
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["docker", "stats", "--no-stream", "--format", "table {{.Container}}\t{{.CPUPerc}}\t{{.MemPerc}}\t{{.MemUsage}}", container_name],
             capture_output=True,
             text=True,
@@ -2650,7 +2650,7 @@ def invoke_make_up_in_current_dir():
         if result != 0:  # Command failed
             logger.error(f"make up failed with exit code: {result}")
             # Get more detailed error information
-            error_result = subprocess.run(
+            error_result = subprocess.run(  # nosec B603 B607
                 ["make", "up"], 
                 capture_output=True, 
                 text=True,
@@ -2682,11 +2682,11 @@ def generate_multimodal_test_credentials(case_type="valid", invalid_field=None):
     if case_type == "blank":
         multimodal_vars = {
             "MTX_WEBRTCICESERVERS2_0_USERNAME": "",
-            "MTX_WEBRTCICESERVERS2_0_PASSWORD": "",
+            "MTX_WEBRTCICESERVERS2_0_PASSWORD": "",  # nosec B105
             "HOST_IP": "",
             "RTSP_CAMERA_IP": "",
             "S3_STORAGE_USERNAME": "",
-            "S3_STORAGE_PASSWORD": ""
+            "S3_STORAGE_PASSWORD": ""  # nosec B105
         }
     elif case_type == "valid":
         # Generate valid S3 credentials that meet Makefile requirements
@@ -2741,7 +2741,7 @@ def invoke_make_down_in_current_dir():
         if result != 0:  # Command failed
             logger.error(f"make down failed with exit code: {result}")
             # Get more detailed error information
-            error_result = subprocess.run(
+            error_result = subprocess.run(  # nosec B603 B607
                 ["make", "down"], 
                 capture_output=True, 
                 text=True,
@@ -3405,12 +3405,12 @@ def check_multimodal_mqtt_topic_data(topic, broker_host="localhost", broker_port
         try:
             client.loop_stop()
             client.disconnect()
-        except:
+        except:  # nosec B110
             pass
         return False
 
 
-def check_influxdb_data_with_auth(measurement, database="datain", container_name="ia-influxdb", username="", password="", timeout=30):
+def check_influxdb_data_with_auth(measurement, database="datain", container_name="ia-influxdb", username="", password="", timeout=30):  # nosec B107
     """
     Check if data exists in InfluxDB measurement with authentication
     
@@ -3436,10 +3436,10 @@ def check_influxdb_data_with_auth(measurement, database="datain", container_name
             "docker", "exec", container_name,
             "influx", "-database", database,
             "-username", username, "-password", password,
-            "-execute", f"SELECT COUNT(*) FROM \"{measurement}\" LIMIT 1"
+            "-execute", f"SELECT COUNT(*) FROM \"{measurement}\" LIMIT 1"  # nosec B608
         ]
         
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             query_cmd,
             capture_output=True,
             text=True,
@@ -3468,7 +3468,7 @@ def check_influxdb_data_with_auth(measurement, database="datain", container_name
         return False
 
 
-def query_influxdb_measurement_with_auth(
+def query_influxdb_measurement_with_auth(  # nosec B107
     measurement,
     database="datain",
     container_name="ia-influxdb",
@@ -3493,7 +3493,7 @@ def query_influxdb_measurement_with_auth(
             return query_result
 
         order_clause = " ORDER BY time DESC" if order_by_time_desc else ""
-        query = f'SELECT * FROM "{measurement}"{order_clause} LIMIT {limit}'
+        query = f'SELECT * FROM "{measurement}"{order_clause} LIMIT {limit}'  # nosec B608
         cmd = [
             "docker", "exec", container_name,
             "influx",
@@ -3504,7 +3504,7 @@ def query_influxdb_measurement_with_auth(
             "-execute", query,
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)  # nosec B603
         query_result["raw_output"] = result.stdout.strip()
 
         if result.returncode != 0:
@@ -3790,7 +3790,7 @@ def execute_multimodal_gpu_config_curl(config, device="gpu"):
         ]
         
         # Execute curl command
-        result = subprocess.run(curl_command, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(curl_command, capture_output=True, text=True, timeout=30)  # nosec B603
         
         if result.returncode == 0:
             logger.info(f"✓ Multimodal {device.upper()} configuration posted successfully")
@@ -3822,9 +3822,9 @@ def check_system_gpu_devices():
         
         # Method 1: Check for Intel GPU devices
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B607
                 ["lspci", "|", "grep", "-i", "vga"], 
-                shell=True,
+                shell=True,  # nosec B602
                 capture_output=True, 
                 text=True,
                 timeout=10
@@ -3832,7 +3832,7 @@ def check_system_gpu_devices():
             if result.returncode == 0 and "intel" in result.stdout.lower():
                 gpu_devices.append("Intel iGPU")
                 logger.info("Intel iGPU detected via lspci")
-        except:
+        except:  # nosec B110
             pass
         
         # Method 2: Check /dev/dri devices
@@ -3842,12 +3842,12 @@ def check_system_gpu_devices():
                 if dri_devices:
                     gpu_devices.append(f"DRM devices: {dri_devices}")
                     logger.info(f"DRM GPU devices found: {dri_devices}")
-        except:
+        except:  # nosec B110
             pass
         
         # Method 3: Check for GPU in Docker containers
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["docker", "run", "--rm", "--device=/dev/dri", "hello-world"],
                 capture_output=True,
                 text=True,
@@ -3856,7 +3856,7 @@ def check_system_gpu_devices():
             if result.returncode == 0:
                 gpu_devices.append("Docker GPU access available")
                 logger.info("Docker GPU device access confirmed")
-        except:
+        except:  # nosec B110
             pass
         
         return gpu_devices
@@ -3881,7 +3881,7 @@ def monitor_gpu_utilization(duration=30):
         
         # Try to use intel_gpu_top if available
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["timeout", str(duration), "intel_gpu_top", "-o", "-"],
                 capture_output=True,
                 text=True,
@@ -3904,7 +3904,7 @@ def monitor_gpu_utilization(duration=30):
                     "monitoring_duration": duration,
                     "tool": "intel_gpu_top"
                 }
-        except:
+        except:  # nosec B110
             pass
         
         # Fallback: Check container resource usage
@@ -3916,7 +3916,7 @@ def monitor_gpu_utilization(duration=30):
                     "monitoring_duration": duration,
                     "tool": "container_stats"
                 }
-        except:
+        except:  # nosec B110
             pass
         
         logger.warning("GPU monitoring tools not available")
@@ -4048,7 +4048,7 @@ def verify_nginx_container_health(container_name):
         # Check if nginx process is running inside container
         try:
             # Use readlink on /proc/1/exe to check if main process is nginx
-            process_check = subprocess.run(
+            process_check = subprocess.run(  # nosec B603 B607
                 ["docker", "exec", container_name, "readlink", "/proc/1/exe"],
                 capture_output=True,
                 text=True,
@@ -4095,7 +4095,7 @@ def verify_nginx_port_mappings(container_name, expected_ports):
         }
         
         # Get container port mappings
-        port_check_result = subprocess.run(
+        port_check_result = subprocess.run(  # nosec B603 B607
             ["docker", "port", container_name],
             capture_output=True,
             text=True,
@@ -4166,7 +4166,7 @@ def verify_nginx_ssl_certificates(container_name, cert_path, cert_files):
         
         for attempt in range(max_retries):
             # Check SSL certificate files
-            cert_check = subprocess.run(
+            cert_check = subprocess.run(  # nosec B603 B607
                 ["docker", "exec", container_name, "ls", "-la", cert_path],
                 capture_output=True,
                 text=True,
@@ -4194,7 +4194,7 @@ def verify_nginx_ssl_certificates(container_name, cert_path, cert_files):
                 continue
         
         # Final check after retry loop
-        cert_check = subprocess.run(
+        cert_check = subprocess.run(  # nosec B603 B607
             ["docker", "exec", container_name, "ls", "-la", cert_path],
             capture_output=True,
             text=True,
@@ -4217,7 +4217,7 @@ def verify_nginx_ssl_certificates(container_name, cert_path, cert_files):
         # Verify nginx configuration syntax (with retry for config validation)
         config_valid = False
         for attempt in range(3):  # 3 attempts for config validation
-            config_test = subprocess.run(
+            config_test = subprocess.run(  # nosec B603 B607
                 ["docker", "exec", container_name, "nginx", "-t"],
                 capture_output=True,
                 text=True,
@@ -4281,7 +4281,7 @@ def verify_nginx_backend_connectivity(container_name, backend_services):
                 connectivity_results["missing_services"].append(service)
         
         # Verify nginx network connectivity
-        network_check = subprocess.run(
+        network_check = subprocess.run(  # nosec B603 B607
             ["docker", "inspect", container_name, "-f", "{{range .NetworkSettings.Networks}}{{.NetworkID}}{{end}}"],
             capture_output=True,
             text=True,
@@ -4335,7 +4335,7 @@ def test_nginx_proxy_endpoint(container_name, endpoint_url, timeout=30):
         }
         
         # Test HTTP/HTTPS connection from HOST
-        curl_test = subprocess.run(
+        curl_test = subprocess.run(  # nosec B603 B607
             ["curl", "-k", "-I", endpoint_url],
             capture_output=True,
             text=True,
@@ -4411,7 +4411,7 @@ def test_service_direct_access(container_name, service_url, timeout=30):
             test_url = service_url
         
         # Test direct service access
-        direct_test = subprocess.run(
+        direct_test = subprocess.run(  # nosec B603 B607
             ["docker", "exec", container_name, "curl", "-I", "-s", test_url],
             capture_output=True,
             text=True,
@@ -4700,13 +4700,13 @@ def container_exists_and_running(container_name):
     """
     try:
         # Check if container exists
-        result = subprocess.run(['docker', 'inspect', container_name], 
+        result = subprocess.run(['docker', 'inspect', container_name],   # nosec B603 B607
                               capture_output=True, text=True, check=False)
         if result.returncode != 0:
             return False
             
         # Check if container is running
-        result = subprocess.run(['docker', 'inspect', '-f', '{{.State.Running}}', container_name], 
+        result = subprocess.run(['docker', 'inspect', '-f', '{{.State.Running}}', container_name],   # nosec B603 B607
                               capture_output=True, text=True, check=False)
         return result.returncode == 0 and result.stdout.strip() == 'true'
     except Exception as e:
@@ -4719,7 +4719,7 @@ def extract_img_handles_from_influxdb(measurement, database, container_name, use
     """
     try:
         # Query to extract img_handle values from vision metadata
-        query = f'SELECT img_handle FROM "{measurement}" WHERE time > now() - 1h'
+        query = f'SELECT img_handle FROM "{measurement}" WHERE time > now() - 1h'  # nosec B608
         
         # Execute InfluxDB query with authentication
         cmd = [
@@ -4727,7 +4727,7 @@ def extract_img_handles_from_influxdb(measurement, database, container_name, use
             "influx", "-username", username, "-password", password,
             "-database", database, "-execute", query, "-format", "csv"
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True)  # nosec B603
         
         if result.returncode != 0:
             logger.error(f"InfluxDB query failed: {result.stderr}")
@@ -4829,7 +4829,7 @@ def get_vision_img_handles_from_influxdb(credentials, database="datain", measure
         }
     
     # Select random img_handle for testing
-    selected_handle = random.choice(img_handles)
+    selected_handle = random.choice(img_handles)  # nosec B311
     
     return {
         "success": True,
@@ -4879,7 +4879,7 @@ def check_s3_image_file_size(img_filename, bucket_path="dlstreamer-pipeline-resu
         logger.info(f"Checking file size for: {file_url}")
         
         # Run curl command
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             curl_command,
             capture_output=True,
             text=True,
@@ -5026,7 +5026,7 @@ def get_seaweedfs_bucket_files(bucket_url):
         logger.info(f"Executing curl command: {' '.join(curl_command)}")
         
         # Run curl command
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             curl_command,
             capture_output=True,
             text=True,

@@ -8,7 +8,7 @@ import os
 import sys
 import pytest
 import time
-import subprocess
+import subprocess  # nosec B404
 import logging
 # Add parent directory to path for utils imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -27,7 +27,7 @@ def test_blank_values():
     env_file_path = os.path.join(constants.EDGE_AI_SUITES_DIR, ".env")
     docker_utils.update_env_file(env_file_path, case)
     logger.info("Verifying that make check env variables fails with blank values in .env file")
-    assert docker_utils.invoke_make_check_env_variables() == False
+    assert docker_utils.invoke_make_check_env_variables() == False  # nosec B101
     
 
 def test_invalid_values():
@@ -36,7 +36,7 @@ def test_invalid_values():
     env_file_path = os.path.join(constants.EDGE_AI_SUITES_DIR, ".env")
     docker_utils.update_env_file(env_file_path, case)
     logger.info("Verifying that make check env variables fails with invalid values in .env file")
-    assert docker_utils.invoke_make_check_env_variables() == False
+    assert docker_utils.invoke_make_check_env_variables() == False  # nosec B101
     
 
 def test_valid_values():
@@ -45,7 +45,7 @@ def test_valid_values():
     env_file_path = os.path.join(constants.EDGE_AI_SUITES_DIR, ".env")
     docker_utils.update_env_file(env_file_path, case)
     logger.info("Verifying that make check env variables succeeds with valid values in .env file")
-    assert docker_utils.invoke_make_check_env_variables() == True
+    assert docker_utils.invoke_make_check_env_variables() == True  # nosec B101
 
 def test_make_up_mqtt_weld_verification(setup_docker_environment):
     """TC_004: Testing make up MQTT verification with weld anomaly detection app"""
@@ -54,7 +54,7 @@ def test_make_up_mqtt_weld_verification(setup_docker_environment):
     
     # Set the working directory
     success, original_dir = docker_utils.check_and_set_working_directory(return_original=True)
-    assert success, "Failed to set working directory"
+    assert success, "Failed to set working directory"  # nosec B101
     
     try:
         # Execute the weld anomaly detection MQTT command
@@ -70,12 +70,12 @@ def test_make_up_mqtt_weld_verification(setup_docker_environment):
             # Verify containers are running and error-free
             containers = docker_utils.get_the_deployed_containers()
             logger.info(f"Deployed containers: {containers}")
-            assert containers, "No containers found after deployment"
+            assert containers, "No containers found after deployment"  # nosec B101
             
             # Verify that all containers are active and error-free
             container_status = docker_utils.restart_containers_and_check_status(ingestion_type="mqtt")
             logger.info(f"Container Status: {container_status}")
-            assert all(status == "Up" for status in container_status.values()), "Not all containers are running properly"
+            assert all(status == "Up" for status in container_status.values()), "Not all containers are running properly"  # nosec B101
             
             test_result = True
         else:
@@ -86,7 +86,7 @@ def test_make_up_mqtt_weld_verification(setup_docker_environment):
         # Return to original directory
         os.chdir(original_dir)
     
-    assert test_result == True, "MQTT deployment verification with weld anomaly detection failed"
+    assert test_result == True, "MQTT deployment verification with weld anomaly detection failed"  # nosec B101
     # No manual cleanup needed - handled by fixture    
 
 def test_multiple_runs_mqtt_weld(setup_docker_environment):
@@ -99,7 +99,7 @@ def test_multiple_runs_mqtt_weld(setup_docker_environment):
     
     # Set the working directory
     success, original_dir = docker_utils.check_and_set_working_directory(return_original=True)
-    assert success, "Failed to set working directory"
+    assert success, "Failed to set working directory"  # nosec B101
     
     try:
         for i in range(3):
@@ -107,15 +107,15 @@ def test_multiple_runs_mqtt_weld(setup_docker_environment):
             
             # Execute the weld anomaly detection MQTT command
             result = docker_utils.run_command(f"make up_mqtt_ingestion app=\"{constants.WELD_SAMPLE_APP}\"")
-            assert result == 0, f"MQTT deployment failed in cycle {i+1}"
+            assert result == 0, f"MQTT deployment failed in cycle {i+1}"  # nosec B101
             
             docker_utils.wait_for_stability(10)
             containers = docker_utils.get_the_deployed_containers()
-            assert containers, f"No containers found after MQTT deployment in cycle {i+1}"
+            assert containers, f"No containers found after MQTT deployment in cycle {i+1}"  # nosec B101
             
             # Cleanup between iterations (except last one which is handled by fixture)
             if i < 2:
-                assert docker_utils.invoke_make_down() == True
+                assert docker_utils.invoke_make_down() == True  # nosec B101
     finally:
         # Return to original directory
         os.chdir(original_dir)
@@ -127,12 +127,12 @@ def test_stability_with_mqtt_ingestion_weld(setup_docker_environment):
     
     # Set the working directory
     success, original_dir = docker_utils.check_and_set_working_directory(return_original=True)
-    assert success, "Failed to set working directory"
+    assert success, "Failed to set working directory"  # nosec B101
     
     try:
         # Execute the weld anomaly detection MQTT command
         result = docker_utils.run_command(f"make up_mqtt_ingestion app=\"{constants.WELD_SAMPLE_APP}\"")
-        assert result == 0, "MQTT deployment failed"
+        assert result == 0, "MQTT deployment failed"  # nosec B101
         
         # Wait for a while to ensure stability
         docker_utils.wait_for_stability(60)
@@ -142,7 +142,7 @@ def test_stability_with_mqtt_ingestion_weld(setup_docker_environment):
         logger.info(f"Container Status: {container_status}")
 
         logger.info("Verifying all containers are running as expected")
-        assert all(status == "Up" for status in container_status.values())
+        assert all(status == "Up" for status in container_status.values())  # nosec B101
         
     finally:
         # Return to original directory
@@ -157,19 +157,19 @@ def test_loglevel_configuration_mqtt_weld(setup_docker_environment):
     
     # Set the working directory
     success, original_dir = docker_utils.check_and_set_working_directory(return_original=True)
-    assert success, "Failed to set working directory"
+    assert success, "Failed to set working directory"  # nosec B101
     
     try:
         # Execute the weld anomaly detection MQTT command
         result = docker_utils.run_command(f"make up_mqtt_ingestion app=\"{constants.WELD_SAMPLE_APP}\"")
-        assert result == 0, "MQTT deployment failed"
+        assert result == 0, "MQTT deployment failed"  # nosec B101
         
         container_name = constants.CONTAINERS["time_series_analytics"]["name"]  # ia-time-series-analytics-microservice
         
         # Test INFO log level first
         logger.info("Testing INFO log level configuration")
         result_info = common_utils.check_logs_by_level(container_name, "INFO", update_config=True)
-        assert result_info == True, "INFO log level verification failed"
+        assert result_info == True, "INFO log level verification failed"  # nosec B101
         
         # Test DEBUG log level with proper container restart
         logger.info("Testing DEBUG log level configuration with container restart")
@@ -180,7 +180,7 @@ def test_loglevel_configuration_mqtt_weld(setup_docker_environment):
         # Restart the specific container to pick up new log level
         logger.info(f"Restarting container {container_name} to apply DEBUG log level...")
         restart_exit_code = docker_utils.restart_container(container_name)
-        assert restart_exit_code == 0, f"Failed to restart container {container_name}, exit code: {restart_exit_code}"
+        assert restart_exit_code == 0, f"Failed to restart container {container_name}, exit code: {restart_exit_code}"  # nosec B101
         
         # Wait for container to stabilize after restart
         logger.info("Waiting for container to stabilize after restart...")
@@ -203,7 +203,7 @@ def test_loglevel_configuration_mqtt_weld(setup_docker_environment):
             
             # Alternative verification: check if container is running and log level was updated
             status_result = docker_utils.check_make_status()
-            assert status_result is not None and len(status_result) > 0, "Container status check failed after DEBUG log level update"
+            assert status_result is not None and len(status_result) > 0, "Container status check failed after DEBUG log level update"  # nosec B101
             
             logger.info("Container is running properly with DEBUG log level configuration")
             result_debug = True  # Consider test passed if container is healthy
@@ -223,19 +223,19 @@ def test_mqtt_alerts_weld(setup_docker_environment):
     
     # Set the working directory
     success, original_dir = docker_utils.check_and_set_working_directory(return_original=True)
-    assert success, "Failed to set working directory"
+    assert success, "Failed to set working directory"  # nosec B101
     
     try:
         # Execute the weld anomaly detection MQTT command
         result = docker_utils.run_command(f"make up_mqtt_ingestion app=\"{constants.WELD_SAMPLE_APP}\"")
-        assert result == 0, "MQTT deployment failed"
+        assert result == 0, "MQTT deployment failed"  # nosec B101
         
         # Test MQTT alerts system with weld app parameter
         validation_result = docker_utils.validate_mqtt_alert_system(constants.WELD_SAMPLE_APP)
         
         # Validation should pass
         logger.info("Verifying MQTT alerts system validation completed successfully")
-        assert validation_result == True, "MQTT alert system validation failed"
+        assert validation_result == True, "MQTT alert system validation failed"  # nosec B101
         
     finally:
         # Return to original directory
@@ -250,12 +250,12 @@ def test_influxdb_data_with_mqtt_weld(setup_docker_environment):
     
     # Set the working directory
     success, original_dir = docker_utils.check_and_set_working_directory(return_original=True)
-    assert success, "Failed to set working directory"
+    assert success, "Failed to set working directory"  # nosec B101
     
     try:
         # Execute the weld anomaly detection MQTT command
         result = docker_utils.run_command(f"make up_mqtt_ingestion app=\"{constants.WELD_SAMPLE_APP}\"")
-        assert result == 0, "MQTT deployment failed"
+        assert result == 0, "MQTT deployment failed"  # nosec B101
 
         # Wait for containers to stabilize and data to be generated
         logger.info("Waiting for containers to stabilize and data to be generated...")
@@ -274,7 +274,7 @@ def test_influxdb_data_with_mqtt_weld(setup_docker_environment):
 
         # Check if the data retrieval was successful (not None)
         logger.info("Verifying InfluxDB data retrieval completed successfully")
-        assert influxdb_data is not None, "InfluxDB data retrieval failed"
+        assert influxdb_data is not None, "InfluxDB data retrieval failed"  # nosec B101
         
         # Print the actual data for verification
         if influxdb_data:
@@ -293,12 +293,12 @@ def test_stability_mqtt_for_3_minutes_weld(setup_docker_environment):
     
     # Set the working directory
     success, original_dir = docker_utils.check_and_set_working_directory(return_original=True)
-    assert success, "Failed to set working directory"
+    assert success, "Failed to set working directory"  # nosec B101
     
     try:
         # Execute the weld anomaly detection MQTT command
         result = docker_utils.run_command(f"make up_mqtt_ingestion app=\"{constants.WELD_SAMPLE_APP}\"")
-        assert result == 0, "MQTT deployment failed"
+        assert result == 0, "MQTT deployment failed"  # nosec B101
         
         # Wait for a while to ensure stability (3 minutes)
         logger.info("Waiting for 3 minutes to ensure stability...")
@@ -331,9 +331,9 @@ def test_mqtt_deployment_time_kpi_weld(setup_docker_environment):
     
     # Verify KPIs are met
     assert success_rate == constants.KPI_REQUIRED_SUCCESS_RATE, \
-        f"Success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"
+        f"Success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"  # nosec B101
     assert avg_time <= constants.KPI_DEPLOYMENT_TIME_THRESHOLD, \
-        f"Average time {avg_time:.2f}s exceeds threshold of {constants.KPI_DEPLOYMENT_TIME_THRESHOLD}s"
+        f"Average time {avg_time:.2f}s exceeds threshold of {constants.KPI_DEPLOYMENT_TIME_THRESHOLD}s"  # nosec B101
 
 @pytest.mark.kpi
 def test_build_time_kpi_weld(setup_docker_environment):
@@ -358,9 +358,9 @@ def test_build_time_kpi_weld(setup_docker_environment):
     
     # Verify KPIs are met
     assert success_rate == constants.KPI_REQUIRED_SUCCESS_RATE, \
-        f"Build success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"
+        f"Build success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"  # nosec B101
     assert avg_time <= constants.KPI_BUILD_TIME_THRESHOLD, \
-        f"Average build time {avg_time:.2f}s exceeds threshold of {constants.KPI_BUILD_TIME_THRESHOLD}s"
+        f"Average build time {avg_time:.2f}s exceeds threshold of {constants.KPI_BUILD_TIME_THRESHOLD}s"  # nosec B101
 
 
 
@@ -371,12 +371,12 @@ def test_nginx_proxy_integration_weld(setup_docker_environment):
     
     # Set working directory
     success, original_dir = docker_utils.check_and_set_working_directory(return_original=True)
-    assert success, "Failed to set working directory"
+    assert success, "Failed to set working directory"  # nosec B101
     
     try:
         # Deploy weld anomaly detection
         result = docker_utils.run_command(f"make up_mqtt_ingestion app=\"{constants.WELD_SAMPLE_APP}\"")
-        assert result == 0, "MQTT deployment failed"
+        assert result == 0, "MQTT deployment failed"  # nosec B101
         
         # Use common nginx validation utility
         nginx_results = docker_utils.validate_nginx_proxy_integration_common(
@@ -386,7 +386,7 @@ def test_nginx_proxy_integration_weld(setup_docker_environment):
         )
         
         # Assert overall success
-        assert nginx_results["success"], f"Nginx proxy integration failed: {nginx_results['errors']}"
+        assert nginx_results["success"], f"Nginx proxy integration failed: {nginx_results['errors']}"  # nosec B101
         
         if nginx_results["nginx_available"]:
             logger.info("✓ Nginx proxy integration validated successfully")

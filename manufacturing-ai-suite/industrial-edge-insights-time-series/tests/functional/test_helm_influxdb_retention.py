@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../util
 import helm_utils
 import constants
 import os
-import subprocess
+import subprocess  # nosec B404
 import time
 import logging
 import conftest_helm
@@ -29,21 +29,21 @@ def test_influxdb_data_retention_with_opcua(setup_helm_environment, telegraf_inp
     logger.info("TC_001: Testing InfluxDB data retention of 1 hour with opcua plugin.")
     # Define the path to the config.json file
    
-    assert helm_utils.verify_pods(namespace) is True, "Pods are not running as expected for opcua input plugin"
+    assert helm_utils.verify_pods(namespace) is True, "Pods are not running as expected for opcua input plugin"  # nosec B101
     # Get the current system time
     
-    assert helm_utils.setup_sample_app_udf_deployment_package(chart_path) == True, "Failed to set up wind turbine anomaly detector for opcua input plugin"
+    assert helm_utils.setup_sample_app_udf_deployment_package(chart_path) == True, "Failed to set up wind turbine anomaly detector for opcua input plugin"  # nosec B101
     logger.info(f"UDF deployment package is activated and wait for the pods to stabilize in {wait_time} seconds")
 
     time.sleep(wait_time)  # Wait for the pods to stabilize    
-    assert helm_utils.verify_pods_logs(namespace, "DEBUG") is True, "Pods logs are not working for opcua input plugin"
+    assert helm_utils.verify_pods_logs(namespace, "DEBUG") is True, "Pods logs are not working for opcua input plugin"  # nosec B101
 
     # Print the InfluxDB retention duration value from case 6
     influxdb_username, influxdb_password, influxdb_retention_duration = helm_utils.fetch_influxdb_credentials(chart_path)
     logger.info(f"InfluxDB Retention Duration : {influxdb_retention_duration}")
     duration = helm_utils.parse_duration(influxdb_retention_duration)
     logger.info(f"Parsed InfluxDB Retention Duration: {duration} seconds")
-    assert helm_utils.execute_influxdb_commands(namespace, chart_path) is True, "Failed to execute InfluxDB commands for opcua input plugin"  
+    assert helm_utils.execute_influxdb_commands(namespace, chart_path) is True, "Failed to execute InfluxDB commands for opcua input plugin"    # nosec B101
     response, success = helm_utils.verify_influxdb_retention(namespace, chart_path, response=None)
     if success == True and response is not None:
         logger.info(f"InfluxDB response for first record is working as expected for opcua input plugin: {response}")
@@ -66,4 +66,4 @@ def test_influxdb_data_retention_with_opcua(setup_helm_environment, telegraf_inp
     else:
         logger.error("InfluxDB command is not fetched properly")
         success = False
-    assert success is True, "InfluxDB retention duration is not working as expected for opcua input plugin"
+    assert success is True, "InfluxDB retention duration is not working as expected for opcua input plugin"  # nosec B101

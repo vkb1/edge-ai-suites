@@ -8,7 +8,7 @@ import os
 import sys
 import pytest
 import time
-import subprocess
+import subprocess  # nosec B404
 import logging
 # Add parent directory to path for utils imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -27,7 +27,7 @@ def test_blank_values():
     env_file_path = os.path.join(constants.EDGE_AI_SUITES_DIR, ".env")
     docker_utils.update_env_file(env_file_path, case)
     logger.info("Verifying that make check env variables fails with blank values in .env file")
-    assert docker_utils.invoke_make_check_env_variables() == False
+    assert docker_utils.invoke_make_check_env_variables() == False  # nosec B101
     
 
 def test_invalid_values():
@@ -36,7 +36,7 @@ def test_invalid_values():
     env_file_path = os.path.join(constants.EDGE_AI_SUITES_DIR, ".env")
     docker_utils.update_env_file(env_file_path, case)
     logger.info("Verifying that make check env variables fails with invalid values in .env file")
-    assert docker_utils.invoke_make_check_env_variables() == False
+    assert docker_utils.invoke_make_check_env_variables() == False  # nosec B101
     
 
 def test_valid_values():
@@ -45,7 +45,7 @@ def test_valid_values():
     env_file_path = os.path.join(constants.EDGE_AI_SUITES_DIR, ".env")
     docker_utils.update_env_file(env_file_path, case)
     logger.info("Verifying that make check env variables succeeds with valid values in .env file")
-    assert docker_utils.invoke_make_check_env_variables() == True
+    assert docker_utils.invoke_make_check_env_variables() == True  # nosec B101
 
 def test_make_up_opcua(setup_docker_environment):
     """TC_004: Testing make up OPCUA and make down with valid values in .env file"""
@@ -54,12 +54,12 @@ def test_make_up_opcua(setup_docker_environment):
     
     # Use the deploy_opcua function with app parameter
     result = context["deploy_opcua"](app=constants.WIND_SAMPLE_APP)
-    assert result == True, "OPC-UA deployment with app parameter failed"
+    assert result == True, "OPC-UA deployment with app parameter failed"  # nosec B101
     
     # Verify containers are running
     containers = docker_utils.get_the_deployed_containers()
     logger.info(f"Deployed containers: {containers}")
-    assert containers, "No containers found after deployment"
+    assert containers, "No containers found after deployment"  # nosec B101
     
     # No manual cleanup needed - handled by fixture
     
@@ -70,12 +70,12 @@ def test_make_up_mqtt(setup_docker_environment):
     context = setup_docker_environment
     
     # Use enhanced deploy_mqtt function with app parameter
-    assert context["deploy_mqtt"](app=constants.WIND_SAMPLE_APP) == True
+    assert context["deploy_mqtt"](app=constants.WIND_SAMPLE_APP) == True  # nosec B101
     
     # Verify containers are running
     containers = docker_utils.get_the_deployed_containers()
     logger.info(f"Deployed containers: {containers}")
-    assert containers, "No containers found after MQTT deployment"
+    assert containers, "No containers found after MQTT deployment"  # nosec B101
     # No manual cleanup needed - handled by fixture    
 
 def test_multiple_runs_mqtt(setup_docker_environment):
@@ -87,13 +87,13 @@ def test_multiple_runs_mqtt(setup_docker_environment):
     context = setup_docker_environment
     for i in range(3):
         logger.info(f"Cycle {i+1}:")
-        assert context["deploy_mqtt"](app=constants.WIND_SAMPLE_APP) == True
+        assert context["deploy_mqtt"](app=constants.WIND_SAMPLE_APP) == True  # nosec B101
         docker_utils.wait_for_stability(10)
         containers = docker_utils.get_the_deployed_containers()
-        assert containers, "No containers found after MQTT deployment"
+        assert containers, "No containers found after MQTT deployment"  # nosec B101
         # Cleanup between iterations (except last one which is handled by fixture)
         if i < 2:
-            assert docker_utils.invoke_make_down() == True
+            assert docker_utils.invoke_make_down() == True  # nosec B101
 
 def test_multiple_runs_opcua(setup_docker_environment):
     """
@@ -104,13 +104,13 @@ def test_multiple_runs_opcua(setup_docker_environment):
     context = setup_docker_environment
     for i in range(3):
         logger.info(f"Cycle {i+1}:")
-        assert context["deploy_opcua"](app=constants.WIND_SAMPLE_APP) == True
+        assert context["deploy_opcua"](app=constants.WIND_SAMPLE_APP) == True  # nosec B101
         docker_utils.wait_for_stability(10)
         containers = docker_utils.get_the_deployed_containers()
-        assert containers, "No containers found after OPCUA deployment"
+        assert containers, "No containers found after OPCUA deployment"  # nosec B101
         # Cleanup between iterations (except last one which is handled by fixture)
         if i < 2:
-            assert docker_utils.invoke_make_down() == True
+            assert docker_utils.invoke_make_down() == True  # nosec B101
 
 def test_switch_mqtt_to_opcua_ingestion(setup_docker_environment):
     """TC_008: Testing switch between MQTT and OPCUA ingestion"""
@@ -119,7 +119,7 @@ def test_switch_mqtt_to_opcua_ingestion(setup_docker_environment):
     context["deploy_mqtt"]()
     docker_utils.wait_for_stability(10)
     logger.info("Verifying Switch from mqtt to opcua succeeded")
-    assert docker_utils.invoke_switch_mqtt_opcua() == True
+    assert docker_utils.invoke_switch_mqtt_opcua() == True  # nosec B101
     # Cleanup handled by fixture
     
 
@@ -130,7 +130,7 @@ def test_switch_opcua_to_mqtt_ingestion(setup_docker_environment):
     context["deploy_opcua"]()
     docker_utils.wait_for_stability(10)
     logger.info("Verifying switch from opcua to mqtt succeeded")
-    assert docker_utils.invoke_switch_opcua_mqtt() == True
+    assert docker_utils.invoke_switch_opcua_mqtt() == True  # nosec B101
     # Cleanup handled by fixture
 
 def test_stability_with_mqtt_ingestion(setup_docker_environment):
@@ -147,7 +147,7 @@ def test_stability_with_mqtt_ingestion(setup_docker_environment):
     logger.info(f"Container Status: {container_status}")
 
     logger.info("Verifying all containers are running as expected")
-    assert all(status == "Up" for status in container_status.values())
+    assert all(status == "Up" for status in container_status.values())  # nosec B101
     
     # Cleanup handled by fixture
     
@@ -166,7 +166,7 @@ def test_stability_with_opcua_ingestion(setup_docker_environment):
     logger.info(f"Container Status: {container_status}")
 
     logger.info("Verifying all containers are running as expected")
-    assert all(status == "Up" for status in container_status.values())
+    assert all(status == "Up" for status in container_status.values())  # nosec B101
     
     # Cleanup handled by fixture
     
@@ -182,7 +182,7 @@ def test_loglevel_configuration(setup_docker_environment):
     # Test INFO log level first
     logger.info("Testing INFO log level configuration")
     result_info = common_utils.check_logs_by_level(container_name, "INFO", update_config=True)
-    assert result_info == True, "INFO log level verification failed"
+    assert result_info == True, "INFO log level verification failed"  # nosec B101
     
     # Test DEBUG log level with proper container restart
     logger.info("Testing DEBUG log level configuration with container restart")
@@ -193,7 +193,7 @@ def test_loglevel_configuration(setup_docker_environment):
     # Restart container to apply the new log level setting
     logger.info(f"Restarting container {container_name} to apply DEBUG log level...")
     restart_exit_code = docker_utils.restart_container(container_name)
-    assert restart_exit_code == 0, f"Failed to restart container {container_name}, exit code: {restart_exit_code}"
+    assert restart_exit_code == 0, f"Failed to restart container {container_name}, exit code: {restart_exit_code}"  # nosec B101
     
     # Wait for container to stabilize after restart
     logger.info("Waiting for container to stabilize after restart...")
@@ -216,7 +216,7 @@ def test_loglevel_configuration(setup_docker_environment):
         
         # Alternative verification: check if container is running and log level was updated
         status_result = docker_utils.check_make_status()
-        assert status_result is not None and len(status_result) > 0, "Container status check failed after DEBUG log level update"
+        assert status_result is not None and len(status_result) > 0, "Container status check failed after DEBUG log level update"  # nosec B101
         
         logger.info("Container is running properly with DEBUG log level configuration")
         result_debug = True  # Consider test passed if container is healthy
@@ -235,7 +235,7 @@ def test_mqtt_alerts(setup_docker_environment):
     
     # Validation should pass
     logger.info("Verifying MQTT alerts system validation completed successfully")
-    assert validation_result == True, "MQTT alert system validation failed"
+    assert validation_result == True, "MQTT alert system validation failed"  # nosec B101
     
     # Cleanup handled by fixture
 
@@ -250,7 +250,7 @@ def test_opcua_alerts(setup_docker_environment):
 
     # Validation should pass
     logger.info("Verifying OPCUA alerts system validation completed successfully")
-    assert validation_result == True, "OPCUA alert system validation failed"
+    assert validation_result == True, "OPCUA alert system validation failed"  # nosec B101
     
     # Cleanup handled by fixture
     
@@ -270,7 +270,7 @@ def test_influxdb_data_with_mqtt(setup_docker_environment):
 
     # Check if the data retrieval was successful (not None)
     logger.info("Verifying InfluxDB data retrieval completed successfully")
-    assert influxdb_data is not None, "InfluxDB data retrieval failed"
+    assert influxdb_data is not None, "InfluxDB data retrieval failed"  # nosec B101
     
     # Print the actual data for verification
     if influxdb_data:
@@ -294,7 +294,7 @@ def test_influxdb_data_with_opcua(setup_docker_environment):
     influxdb_data = docker_utils.execute_influxdb_commands(container_name=constants.CONTAINERS["influxdb"]["name"])
 
     # Check if the data retrieval was successful (not None)
-    assert influxdb_data is not None, "InfluxDB data retrieval failed"
+    assert influxdb_data is not None, "InfluxDB data retrieval failed"  # nosec B101
     logger.info("InfluxDB data retrieval completed successfully")
 
     # Print the actual data for verification
@@ -348,7 +348,7 @@ def test_opcua_multi_stream_ingestion(setup_docker_environment):
         # Verify containers are running
         containers = docker_utils.get_the_deployed_containers()
         logger.info(f"Deployed containers: {containers}")
-        assert containers, "No containers found after multi-stream deployment"
+        assert containers, "No containers found after multi-stream deployment"  # nosec B101
         
         # Verify we have the expected OPC-UA server containers (should be multiple for multi-stream)
         opcua_containers = [c for c in containers if 'opcua-server' in c]
@@ -367,7 +367,7 @@ def test_opcua_multi_stream_ingestion(setup_docker_environment):
         logger.error(f"OPC-UA multi-stream ingestion with {num_streams} streams failed")
         test_result = False
     
-    assert test_result == True, f"OPC-UA multi-stream deployment with {num_streams} streams failed"
+    assert test_result == True, f"OPC-UA multi-stream deployment with {num_streams} streams failed"  # nosec B101
     # No manual cleanup needed - handled by fixture
 
 
@@ -389,7 +389,7 @@ def test_mqtt_multi_stream_ingestion(setup_docker_environment):
         # Verify containers are running
         containers = docker_utils.get_the_deployed_containers()
         logger.info(f"Deployed containers: {containers}")
-        assert containers, "No containers found after multi-stream deployment"
+        assert containers, "No containers found after multi-stream deployment"  # nosec B101
         
         # Verify we have the expected MQTT publisher containers (should be multiple for multi-stream)
         mqtt_containers = [c for c in containers if 'mqtt-publisher' in c]
@@ -409,7 +409,7 @@ def test_mqtt_multi_stream_ingestion(setup_docker_environment):
         test_result = False
 
     
-    assert test_result == True, f"MQTT multi-stream deployment with {num_streams} streams failed"
+    assert test_result == True, f"MQTT multi-stream deployment with {num_streams} streams failed"  # nosec B101
     # No manual cleanup needed - handled by fixture
 
 
@@ -434,7 +434,7 @@ def test_opcua_multi_stream_scalability(setup_docker_environment):
             # Verify containers are running
             containers = docker_utils.get_the_deployed_containers()
             logger.info(f"Deployed containers for {num_streams} streams: {len(containers)} total")
-            assert containers, f"No containers found after deployment with {num_streams} streams"
+            assert containers, f"No containers found after deployment with {num_streams} streams"  # nosec B101
             
             # Run make status check before declaring success
             logger.info("Running make status check to verify deployment health...")
@@ -449,7 +449,7 @@ def test_opcua_multi_stream_scalability(setup_docker_environment):
             logger.error(f"OPC-UA multi-stream ingestion with {num_streams} streams failed")
             test_result = False
         
-        assert test_result == True, f"OPC-UA multi-stream deployment with {num_streams} streams failed"
+        assert test_result == True, f"OPC-UA multi-stream deployment with {num_streams} streams failed"  # nosec B101
         
         # Clean up between different stream counts (except the last one)
         if num_streams != stream_counts[-1]:
@@ -481,7 +481,7 @@ def test_mqtt_multi_stream_scalability(setup_docker_environment):
             # Verify containers are running
             containers = docker_utils.get_the_deployed_containers()
             logger.info(f"Deployed containers for {num_streams} streams: {len(containers)} total")
-            assert containers, f"No containers found after deployment with {num_streams} streams"
+            assert containers, f"No containers found after deployment with {num_streams} streams"  # nosec B101
             
             # Run make status check before declaring success
             logger.info("Running make status check to verify deployment health...")
@@ -496,7 +496,7 @@ def test_mqtt_multi_stream_scalability(setup_docker_environment):
             logger.error(f"MQTT multi-stream ingestion with {num_streams} streams failed")
             test_result = False
 
-        assert test_result == True, f"MQTT multi-stream deployment with {num_streams} streams failed"
+        assert test_result == True, f"MQTT multi-stream deployment with {num_streams} streams failed"  # nosec B101
         
         # Clean up between different stream counts (except the last one)
         if num_streams != stream_counts[-1]:
@@ -527,9 +527,9 @@ def test_mqtt_deployment_time_kpi(setup_docker_environment):
     
     # Verify KPIs are met
     assert success_rate == constants.KPI_REQUIRED_SUCCESS_RATE, \
-        f"Success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"
+        f"Success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"  # nosec B101
     assert avg_time <= constants.KPI_DEPLOYMENT_TIME_THRESHOLD, \
-        f"Average time {avg_time:.2f}s exceeds threshold of {constants.KPI_DEPLOYMENT_TIME_THRESHOLD}s"
+        f"Average time {avg_time:.2f}s exceeds threshold of {constants.KPI_DEPLOYMENT_TIME_THRESHOLD}s"  # nosec B101
 
 
 @pytest.mark.kpi
@@ -552,9 +552,9 @@ def test_opcua_deployment_time_kpi(setup_docker_environment):
     
     # Verify KPIs are met
     assert success_rate == constants.KPI_REQUIRED_SUCCESS_RATE, \
-        f"Success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"
+        f"Success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"  # nosec B101
     assert avg_time <= constants.KPI_DEPLOYMENT_TIME_THRESHOLD, \
-        f"Average time {avg_time:.2f}s exceeds threshold of {constants.KPI_DEPLOYMENT_TIME_THRESHOLD}s"
+        f"Average time {avg_time:.2f}s exceeds threshold of {constants.KPI_DEPLOYMENT_TIME_THRESHOLD}s"  # nosec B101
 
 
 @pytest.mark.kpi
@@ -576,7 +576,7 @@ def test_container_sizes_kpi(setup_docker_environment):
     # First, invoke make build to create the images
     logger.info("Building Docker images...")
     build_success, build_output = docker_utils.invoke_make_build()
-    assert build_success, f"Docker build failed: {build_output}"
+    assert build_success, f"Docker build failed: {build_output}"  # nosec B101
     logger.info("Docker build completed successfully")
     
     # Now check the sizes of the built images
@@ -587,7 +587,7 @@ def test_container_sizes_kpi(setup_docker_environment):
         size_threshold=size_threshold,
         check_deployed_only=False
     )
-    assert success, message
+    assert success, message  # nosec B101
 
 
 @pytest.mark.kpi
@@ -610,9 +610,9 @@ def test_build_time_kpi(setup_docker_environment):
     
     # Verify KPIs are met
     assert success_rate == constants.KPI_REQUIRED_SUCCESS_RATE, \
-        f"Build success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"
+        f"Build success rate {success_rate}% below required {constants.KPI_REQUIRED_SUCCESS_RATE}%"  # nosec B101
     assert avg_time <= constants.KPI_BUILD_TIME_THRESHOLD, \
-        f"Average build time {avg_time:.2f}s exceeds threshold of {constants.KPI_BUILD_TIME_THRESHOLD}s"
+        f"Average build time {avg_time:.2f}s exceeds threshold of {constants.KPI_BUILD_TIME_THRESHOLD}s"  # nosec B101
 
 
 
@@ -630,7 +630,7 @@ def test_nginx_proxy_integration_wind_turbine(setup_docker_environment):
     )
     
     # Assert overall success or direct access validation
-    assert nginx_results["success"], f"Nginx proxy integration failed: {nginx_results['errors']}"
+    assert nginx_results["success"], f"Nginx proxy integration failed: {nginx_results['errors']}"  # nosec B101
     
     if nginx_results["nginx_available"]:
         logger.info("✓ Nginx proxy integration validated successfully")
@@ -660,12 +660,12 @@ def test_gpu(setup_docker_environment, protocol, test_case, deploy_func):
     
     # Verify the curl command was successful
     logger.info("Verifying GPU configuration test completed successfully")
-    assert curl_result, "GPU configuration test via REST API failed"
+    assert curl_result, "GPU configuration test via REST API failed"  # nosec B101
 
     logger.info(f"Verifying if logs contain GPU keywords...")
     container_name = constants.CONTAINERS["time_series_analytics"]["name"]
     gpu_result = docker_utils.check_log_gpu(container_name, timeout=120, interval=10)
     
     logger.info(f"Verifying GPU keywords found in logs")
-    assert gpu_result == True, f"GPU keywords not found in logs"
+    assert gpu_result == True, f"GPU keywords not found in logs"  # nosec B101
 

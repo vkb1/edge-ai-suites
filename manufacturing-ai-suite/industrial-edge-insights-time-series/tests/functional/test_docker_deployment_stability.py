@@ -8,7 +8,7 @@ import os
 import sys
 import pytest
 import time
-import subprocess
+import subprocess  # nosec B404
 import logging
 from pathlib import Path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../utils'))
@@ -44,11 +44,11 @@ def test_long_run_stability_one_hour(setup_docker_environment):
 
     # Compare stats and assert no significant leaks (define your own threshold)
     assert docker_utils.check_resource_leak(initial_stats, final_stats, memory_leak_threshold_mb=200), \
-    "Significant CPU or memory leak detected after 1 hour run."
+    "Significant CPU or memory leak detected after 1 hour run."  # nosec B101
 
     # Assert all containers are still running
     containers = docker_utils.get_the_deployed_containers()
-    assert containers, "No containers found after 1 hour run."
+    assert containers, "No containers found after 1 hour run."  # nosec B101
     logger.info("Long run test completed successfully.")
 
 
@@ -74,9 +74,9 @@ def test_long_run_stability_one_hour_opcua(setup_docker_environment):
 
     # Compare stats and assert no significant leaks (define your own threshold)
     assert docker_utils.check_resource_leak(initial_stats, final_stats, memory_leak_threshold_mb=200), \
-        "Significant CPU or memory leak detected after 1 hour run (OPCUA)."
+        "Significant CPU or memory leak detected after 1 hour run (OPCUA)."  # nosec B101
 
     # Assert all containers are still running
     containers = docker_utils.get_the_deployed_containers()
-    assert containers, "No containers found after 1 hour run (OPCUA)."
-    logger.info("Long run test (OPCUA) completed successfully.")
+    assert containers, "No containers found after 1 hour run (OPCUA)."  # nosec B101
+    logger.info("Long run test (OPCUA) completed successfully.")

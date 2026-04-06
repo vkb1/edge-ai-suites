@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-import subprocess
+import subprocess  # nosec B404
 import json
 import time
 import os
@@ -79,7 +79,7 @@ def get_host_ip():
 
 def _container_is_running(name):
     """Check if a container is running."""
-    result = subprocess.run(["docker", "ps", "--filter", f"name={name}", "--format", "{{.Names}}"], 
+    result = subprocess.run(["docker", "ps", "--filter", f"name={name}", "--format", "{{.Names}}"],   # nosec B603 B607
                           capture_output=True, text=True)
     return name in result.stdout
 
@@ -90,7 +90,7 @@ def _collect_live_logs(container_name, monitor_duration, search_pattern=None):
         # Run docker logs command for the duration
         process = subprocess.Popen(
             f"docker logs -f {container_name}",
-            shell=True,
+            shell=True,  # nosec B602
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -133,7 +133,7 @@ _wait_for_stability = wait_for_stability
 
 def _run_command(cmd):
     """Execute shell commands."""
-    return subprocess.run(cmd, shell=True).returncode
+    return subprocess.run(cmd, shell=True).returncode  # nosec B602
 
 def _check_and_set_working_directory():
     """Check current working directory and change to wind turbine directory."""
@@ -302,7 +302,7 @@ def check_logs_for_alerts(resource_name, input_type, resource_type="container", 
                     
             elif resource_type == "pod":
                 # For pods, use kubectl to get logs
-                result = subprocess.run(
+                result = subprocess.run(  # nosec B603 B607
                     ["kubectl", "logs", resource_name, "-n", namespace, "--tail=100"],
                     capture_output=True, text=True, check=True
                 )
@@ -485,7 +485,7 @@ def check_logs_by_level(resource_name, log_level, resource_type="container", nam
             grep_command = f"docker logs {resource_name} 2>&1 | grep -i '{log_level_upper}'"
             logger.info(f"Executing command: {grep_command}")
             
-            result = subprocess.run(grep_command, shell=True, capture_output=True, text=True)
+            result = subprocess.run(grep_command, shell=True, capture_output=True, text=True)  # nosec B602
             
             if result.returncode == 0 and result.stdout.strip():
                 # Found matching logs
@@ -514,7 +514,7 @@ def check_logs_by_level(resource_name, log_level, resource_type="container", nam
                 
         elif resource_type == "pod":
             # Pod log checking using kubectl logs
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["kubectl", "logs", resource_name, "-n", namespace, f"--tail={tail_lines}"],
                 capture_output=True, text=True, check=True
             )
@@ -779,10 +779,10 @@ def check_influxdb_data(measurement, database="datain", container_name="ia-influ
         query_cmd = [
             "docker", "exec", container_name,
             "influx", "-database", database,
-            "-execute", f"SELECT COUNT(*) FROM \"{measurement}\" LIMIT 1"
+            "-execute", f"SELECT COUNT(*) FROM \"{measurement}\" LIMIT 1"  # nosec B608
         ]
         
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             query_cmd,
             capture_output=True,
             text=True,
@@ -818,7 +818,7 @@ def get_system_ip():
     """
     try:
         # Use hostname -I command - simple and reliable
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["hostname", "-I"], 
             capture_output=True, 
             text=True, 

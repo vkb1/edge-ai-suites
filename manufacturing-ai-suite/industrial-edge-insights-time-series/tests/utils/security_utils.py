@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-import subprocess
+import subprocess  # nosec B404
 import json
 import time
 import os
@@ -142,7 +142,7 @@ def influxdb_login(namespace, chart_path):
             f"kubectl get pods -n {namespace} "
             "-o jsonpath='{.items[*].metadata.name}' | tr ' ' '\\n' | grep influxdb | head -n 1"
         )
-        result = subprocess.run(pod_name_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(pod_name_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         pod_name = result.stdout.strip()
 
         if not pod_name:
@@ -161,7 +161,7 @@ def influxdb_login(namespace, chart_path):
             namespace,
             pod_name,
         )
-        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         response = result.stdout.strip()
         logger.info(f"InfluxDB response: {response}")
         if "measurements" in response.lower():
@@ -180,7 +180,7 @@ def influxdb_login(namespace, chart_path):
 def check_pod_logs_for_creds(namespace, pod_name, creds):
     """Check pod logs for credentials."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ["kubectl", "logs", pod_name, "-n", namespace, "--tail=100"],
             capture_output=True, text=True, check=True
         )
@@ -237,7 +237,7 @@ def find_exposed_ports_helm(namespace):
 
     # Run the kubectl command to get the services
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 B607
             ['kubectl', 'get', 'svc', '--namespace', namespace],
             capture_output=True,
             text=True,
@@ -264,7 +264,7 @@ def find_exposed_ports_helm(namespace):
         
 def find_exposed_ports_docker():
     # Run the docker ps command and capture the output
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603 B607
         ["docker", "ps", "--format", "table {{.Names}}\t{{.Ports}}"],
         capture_output=True,
         text=True
@@ -297,7 +297,7 @@ def find_exposed_ports_docker():
         for port in ports.split(','):
             port = port.strip()
             # Check if the port is exposed (contains '0.0.0.0' or ':::')
-            if '0.0.0.0' in port or ':::' in port:
+            if '0.0.0.0' in port or ':::' in port:  # nosec B104
                 exposed_ports[container_name].append(port)
 
     # Print the exposed ports for each container
@@ -314,7 +314,7 @@ def find_exposed_ports_docker():
 def check_open_ports(target):
     try:
         # Execute the nmap command to check for open ports
-        result = subprocess.run(['nmap', '-p-', target], capture_output=True, text=True)
+        result = subprocess.run(['nmap', '-p-', target], capture_output=True, text=True)  # nosec B603 B607
 
         # Print the nmap command response
         logger.info(result.stdout)
@@ -346,7 +346,7 @@ def check_nmap(target, ports):
         # Execute the nmap command to check for open ports
         port_list = ','.join(port_numbers)
         logger.info(f"Scanning ports {port_list} on target {target}")
-        result = subprocess.run(['nmap', '-p', port_list, target], capture_output=True, text=True)
+        result = subprocess.run(['nmap', '-p', port_list, target], capture_output=True, text=True)  # nosec B603 B607
 
         # Print the nmap command response
         logger.info(result.stdout)
@@ -394,7 +394,7 @@ def check_nmap_docker(target, ports):
         # Execute the nmap command to check for open ports
         port_list = ','.join(port_numbers)
         logger.info(f"Scanning ports {port_list} on target {target}")
-        result = subprocess.run(['nmap', '-p', port_list, target], capture_output=True, text=True)
+        result = subprocess.run(['nmap', '-p', port_list, target], capture_output=True, text=True)  # nosec B603 B607
 
         # Print the nmap command response
         logger.info(result.stdout)
@@ -418,7 +418,7 @@ def update_continuous_simulator_ingestion():
         )
 
         # Execute the sed command
-        subprocess.run(sed_command, shell=True, check=True)
+        subprocess.run(sed_command, shell=True, check=True)  # nosec B602
 
         logger.info(f"Updated 'CONTINUOUS_SIMULATOR_INGESTION' to 'false' in opcua file {opcua_file}.")
     
@@ -430,7 +430,7 @@ def update_continuous_simulator_ingestion():
         )
         
         # Execute the sed command
-        subprocess.run(sed_command, shell=True, check=True)
+        subprocess.run(sed_command, shell=True, check=True)  # nosec B602
         logger.info(f"Updated 'CONTINUOUS_SIMULATOR_INGESTION' to 'false' in mqtt file {mqtt_file}.")
     except subprocess.CalledProcessError as e:
         logger.error(f"An error occurred while updating the file: {e}")
@@ -470,7 +470,7 @@ def verify_data_integrity_influxdb(chart_path, namespace, first_wind_speed, last
             f"kubectl get pods -n {namespace} "
             "-o jsonpath='{.items[*].metadata.name}' | tr ' ' '\\n' | grep influxdb | head -n 1"
         )
-        result = subprocess.run(pod_name_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(pod_name_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         pod_name = result.stdout.strip()
 
         if not pod_name:
@@ -481,13 +481,13 @@ def verify_data_integrity_influxdb(chart_path, namespace, first_wind_speed, last
 
         # Step 2: Execute InfluxDB commands inside the pod to fetch data
         influx_commands = (
-            f"influx -username {influxdb_username} -password {influxdb_password} -database datain "
+            f"influx -username {influxdb_username} -password {influxdb_password} -database datain "  # nosec B608
             f"-execute 'SELECT wind_speed FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" ORDER BY time ASC LIMIT 1;'"
         )
         exec_command = f"kubectl exec -n {namespace} {pod_name} -- {influx_commands}"
-        logger.info(f"Executing InfluxDB query inside pod: 'SELECT wind_speed FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" ORDER BY time ASC LIMIT 1;' "
+        logger.info(f"Executing InfluxDB query inside pod: 'SELECT wind_speed FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" ORDER BY time ASC LIMIT 1;' "  # nosec B608
                     f"with redacted credentials.")
-        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         first_record_response = result.stdout.strip()
         logger.info(f"First record response: {first_record_response}")
 
@@ -495,13 +495,13 @@ def verify_data_integrity_influxdb(chart_path, namespace, first_wind_speed, last
         influx_first_record = parse_influxdb_response(first_record_response)
 
         influx_commands = (
-            f"influx -username {influxdb_username} -password {influxdb_password} -database datain "
+            f"influx -username {influxdb_username} -password {influxdb_password} -database datain "  # nosec B608
             f"-execute 'SELECT wind_speed FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" ORDER BY time DESC LIMIT 1;'"
         )
         exec_command = f"kubectl exec -n {namespace} {pod_name} -- {influx_commands}"
-        logger.info(f"Executing InfluxDB query inside pod: 'SELECT wind_speed FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" ORDER BY time DESC LIMIT 1;' "
+        logger.info(f"Executing InfluxDB query inside pod: 'SELECT wind_speed FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\" ORDER BY time DESC LIMIT 1;' "  # nosec B608
                     f"with redacted credentials.")
-        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         last_record_response = result.stdout.strip()
         logger.info(f"Last record response: {last_record_response}")
 
@@ -509,13 +509,13 @@ def verify_data_integrity_influxdb(chart_path, namespace, first_wind_speed, last
         influx_last_record = parse_influxdb_response(last_record_response)
 
         influx_commands = (
-            f"influx -username {influxdb_username} -password {influxdb_password} -database datain "
+            f"influx -username {influxdb_username} -password {influxdb_password} -database datain "  # nosec B608
             f"-execute 'SELECT COUNT(wind_speed) FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\";'"
         )
         exec_command = f"kubectl exec -n {namespace} {pod_name} -- {influx_commands}"
-        logger.info(f"Executing InfluxDB query inside pod: 'SELECT COUNT(wind_speed) FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\";' "
+        logger.info(f"Executing InfluxDB query inside pod: 'SELECT COUNT(wind_speed) FROM \"{constants.WIND_TURBINE_INGESTED_TOPIC}\";' "  # nosec B608
                     f"with redacted credentials.")
-        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)
+        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True, check=True)  # nosec B602
         count_response = result.stdout.strip()
         logger.info(f"Count response: {count_response}")
 
@@ -753,10 +753,10 @@ def fetch_docker_credentials(credential_type):
 
         if credential_type == "influxdb":
             username_key = "INFLUXDB_USERNAME="
-            password_key = "INFLUXDB_PASSWORD="
+            password_key = "INFLUXDB_PASSWORD="  # nosec B105
         elif credential_type == "grafana":
             username_key = "VISUALIZER_GRAFANA_USER="
-            password_key = "VISUALIZER_GRAFANA_PASSWORD="
+            password_key = "VISUALIZER_GRAFANA_PASSWORD="  # nosec B105
         else:
             logger.error(f"Unknown credential type: {credential_type}")
             return None, None
@@ -802,7 +802,7 @@ def influxdb_login_docker(container_name="ia-influxdb"):
         exec_command = f"docker exec -e INFLUX_PASSWORD={influxdb_password} {container_name} {influx_commands}"
         logger.info(f"Executing InfluxDB command - 'SHOW MEASUREMENTS'  in container '{container_name}' with configured credentials (credentials not shown)")
         
-        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True)
+        result = subprocess.run(exec_command, shell=True, capture_output=True, text=True)  # nosec B602
         response = result.stdout.strip()
         error_output = result.stderr.strip()
         
