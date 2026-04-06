@@ -38,6 +38,11 @@ on:
         - test_docker_deployment_multimodal
         - test_helm_deployment_multimodal
         default: all-tests
+      test_case:
+        description: 'Specific test case name to run within the selected test file (optional, uses pytest -k pattern matching)'
+        required: false
+        type: string
+        default: ''
   workflow_call:
     inputs:
       tag:
@@ -55,6 +60,11 @@ on:
         required: false
         type: string
         default: 'all-tests'
+      test_case:
+        description: 'Specific test case name to run within the selected test file (optional, uses pytest -k pattern matching)'
+        required: false
+        type: string
+        default: ''
 permissions: {}
 
 
@@ -71,10 +81,12 @@ jobs:
           TAG: ${{ inputs.tag || 'main' }}
           BUILD: ${{ inputs.build || 'yes' }}
           TESTS: ${{ inputs.tests || 'all-tests' }}
+          TEST_CASE: ${{ inputs.test_case || '' }}
         run: |
-          echo "tag    : $TAG"
-          echo "build  : $BUILD"
-          echo "tests  : $TESTS"
+          echo "tag       : $TAG"
+          echo "build     : $BUILD"
+          echo "tests     : $TESTS"
+          echo "test_case : $TEST_CASE"
 
       - name: Checkout current repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -130,6 +142,7 @@ jobs:
       - name: Run Time Series Sample Apps functional tests
         env:
           TESTS: ${{ inputs.tests || 'all-tests' }}
+          TEST_CASE: ${{ inputs.test_case || '' }}
         run: |
           # Timeseries-specific test files
           TIMESERIES_TESTS="test_docker_deployment_stability test_docker_deployment_weld_anomaly \
@@ -151,14 +164,27 @@ jobs:
           mkdir -p /tmp/test_timeseries_report
           rm -f /tmp/test_timeseries_report/report.html /tmp/test_timeseries_report/junit.xml
 
+          # Build pytest -k filter argument if a specific test case is requested
+          PYTEST_K_ARGS=()
+          if [[ -n "$TEST_CASE" ]]; then
+            PYTEST_K_ARGS=(-k "$TEST_CASE")
+          fi
+
+          # Enumerate available test cases if a specific test file is selected
+          if echo "$TIMESERIES_TESTS" | grep -qw "$TESTS"; then
+            echo "::group::Available test cases in ${TESTS}.py"
+            pytest --collect-only -q "${TESTS}.py" 2>/dev/null || true
+            echo "::endgroup::"
+          fi
+
           # Run specific test file if selected, otherwise run all tests
           set +e
           if echo "$TIMESERIES_TESTS" | grep -qw "$TESTS"; then
             pytest -q -vv --self-contained-html --html=/tmp/test_timeseries_report/report.html \
-              --junitxml=/tmp/test_timeseries_report/junit.xml "${TESTS}.py"
+              --junitxml=/tmp/test_timeseries_report/junit.xml "${PYTEST_K_ARGS[@]}" "${TESTS}.py"
           else
             pytest -q -vv --self-contained-html --html=/tmp/test_timeseries_report/report.html \
-              --junitxml=/tmp/test_timeseries_report/junit.xml
+              --junitxml=/tmp/test_timeseries_report/junit.xml "${PYTEST_K_ARGS[@]}"
           fi
           PYTEST_RC=$?
           set -e
@@ -206,6 +232,7 @@ jobs:
         if: always()
         env:
           TESTS: ${{ inputs.tests || 'all-tests' }}
+          TEST_CASE: ${{ inputs.test_case || '' }}
         run: |
           # Multimodal-specific test files
           MULTIMODAL_TESTS="test_docker_deployment_multimodal test_helm_deployment_multimodal"
@@ -224,14 +251,27 @@ jobs:
           mkdir -p /tmp/test_multimodal_report
           rm -f /tmp/test_multimodal_report/report.html /tmp/test_multimodal_report/junit.xml
 
+          # Build pytest -k filter argument if a specific test case is requested
+          PYTEST_K_ARGS=()
+          if [[ -n "$TEST_CASE" ]]; then
+            PYTEST_K_ARGS=(-k "$TEST_CASE")
+          fi
+
+          # Enumerate available test cases if a specific test file is selected
+          if echo "$MULTIMODAL_TESTS" | grep -qw "$TESTS"; then
+            echo "::group::Available test cases in ${TESTS}.py"
+            pytest --collect-only -q "${TESTS}.py" 2>/dev/null || true
+            echo "::endgroup::"
+          fi
+
           # Run specific test file if selected, otherwise run all tests
           set +e
           if echo "$MULTIMODAL_TESTS" | grep -qw "$TESTS"; then
             pytest -q -vv --self-contained-html --html=/tmp/test_multimodal_report/report.html \
-              --junitxml=/tmp/test_multimodal_report/junit.xml "${TESTS}.py"
+              --junitxml=/tmp/test_multimodal_report/junit.xml "${PYTEST_K_ARGS[@]}" "${TESTS}.py"
           else
             pytest -q -vv --self-contained-html --html=/tmp/test_multimodal_report/report.html \
-              --junitxml=/tmp/test_multimodal_report/junit.xml
+              --junitxml=/tmp/test_multimodal_report/junit.xml "${PYTEST_K_ARGS[@]}"
           fi
           PYTEST_RC=$?
           set -e
@@ -281,6 +321,8 @@ jobs:
           TAG: ${{ inputs.tag || 'main' }}
           BUILD: ${{ inputs.build || 'yes' }}
           TESTS: ${{ inputs.tests || 'all-tests' }}
+          TEST_CASE: ${{ inputs.test_case || '' }}
+          ARTIFACTS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts
         run: |
           python3 - <<'PYEOF'
           import xml.etree.ElementTree as ET, os
@@ -289,9 +331,11 @@ jobs:
           tag     = os.environ.get('TAG', 'main')
           build   = os.environ.get('BUILD', 'yes')
           tests   = os.environ.get('TESTS', 'all-tests')
+          test_case = os.environ.get('TEST_CASE', '')
           event   = os.environ.get('GITHUB_EVENT_NAME', 'unknown')
           ts_exit = os.environ.get('TIMESERIES_EXIT_CODE', '')
           mm_exit = os.environ.get('MULTIMODAL_EXIT_CODE', '')
+          artifacts_url = os.environ.get('ARTIFACTS_URL', '')
 
           def parse_junit(xml_path):
               if not os.path.exists(xml_path):
@@ -322,7 +366,10 @@ jobs:
               out.write(f'- **Event:** {event}\n')
               out.write(f'- **Tag/Branch:** {tag}\n')
               out.write(f'- **Build:** {build}\n')
-              out.write(f'- **Tests:** {tests}\n\n')
+              out.write(f'- **Tests:** {tests}\n')
+              if test_case:
+                  out.write(f'- **Test Case Filter:** {test_case}\n')
+              out.write('\n')
 
               sections = [
                   ('\U0001f3ed Time Series Tests', '/tmp/test_timeseries_report/junit.xml', ts_exit),
@@ -370,4 +417,12 @@ jobs:
                   out.write('\u2705 **Overall Status:** ALL TESTS PASSED\n')
               else:
                   out.write('\u274c **Overall Status:** SOME TESTS FAILED\n')
+
+              out.write('\n---\n')
+              out.write('### \U0001f4ce Test Reports\n\n')
+              out.write(f'Download the detailed HTML and JUnit XML test reports from the [Artifacts section]({artifacts_url}) of this workflow run:\n\n')
+              out.write('| Report | Description |\n')
+              out.write('|--------|-------------|\n')
+              out.write(f'| [`timeseries-test-report`]({artifacts_url}) | Time Series functional test HTML report and JUnit XML results |\n')
+              out.write(f'| [`multimodal-test-report`]({artifacts_url}) | Multimodal functional test HTML report and JUnit XML results |\n')
           PYEOF
