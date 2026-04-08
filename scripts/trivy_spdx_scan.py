@@ -56,7 +56,7 @@ def _sanitize_image_name(image: str) -> str:
     Slashes, colons and other special characters are replaced with underscores.
     Leading/trailing underscores are stripped so the result looks tidy.
     """
-    sanitized = re.sub(r"[^a-zA-Z0-9._-]", "_", image)
+    sanitized = re.sub(r"[^a-zA-Z0-9_-]", "_", image)
     sanitized = sanitized.strip("_")
     return sanitized
 
@@ -107,6 +107,29 @@ def _images_from_compose(compose_file: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
+
+# Matches standard Docker image reference format:
+#   [registry/][namespace/]name[:tag][@digest]
+# where each component uses only alphanumeric characters, dots, hyphens,
+# underscores, slashes, colons and the '@' for digest references.
+_VALID_IMAGE_RE = re.compile(
+    r"^[a-zA-Z0-9][a-zA-Z0-9._\-/:@]*$"
+)
+
+
+def _validate_image_name(image: str) -> None:
+    """Raise ``ValueError`` if *image* does not look like a valid Docker image reference."""
+    if not _VALID_IMAGE_RE.match(image):
+        raise ValueError(
+            f"Invalid image name {image!r}. "
+            "Image names must match the pattern: "
+            "[registry/][namespace/]name[:tag][@digest]"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Core scan logic
 # ---------------------------------------------------------------------------
 
@@ -118,6 +141,12 @@ def scan_image(image: str, output_dir: Path) -> bool:
 
     Returns ``True`` on success, ``False`` if the scan failed.
     """
+    try:
+        _validate_image_name(image)
+    except ValueError as exc:
+        logger.error("%s", exc)
+        return False
+
     output_filename = f"trivy-spdx-{_sanitize_image_name(image)}.json"
     output_path = output_dir / output_filename
 
@@ -134,7 +163,7 @@ def scan_image(image: str, output_dir: Path) -> bool:
     logger.info("Output file   : %s", output_path)
     logger.info("Command       : %s", " ".join(cmd))
 
-    result = subprocess.run(cmd, check=False)  # nosec B603 – no user input in cmd
+    result = subprocess.run(cmd, check=False)  # nosec B603 – cmd is a list (no shell), image validated above
 
     if result.returncode != 0:
         logger.error(
