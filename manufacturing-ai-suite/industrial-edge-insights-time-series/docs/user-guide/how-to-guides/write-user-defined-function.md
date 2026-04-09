@@ -188,6 +188,92 @@ Use it to extract fields, run inference or business logic, and emit results.
         self._agent.write_response(udf_pb2.Response(point=point))
 ```
 
+## Batch Processing UDF
+
+For workloads where improved throughput and latency are important, you can implement a **batch processing UDF**. Instead of processing one data point at a time (stream mode), a batch UDF collects multiple points and processes them together using vectorized operations. This is particularly beneficial when using hardware-accelerated libraries such as [Intel® Extension for Scikit-learn*](https://www.intel.com/content/www/us/en/developer/tools/oneapi/scikit-learn.html), which deliver significant performance gains with batch inference.
+
+### How Batch UDFs Work
+
+In batch mode, Kapacitor queries data from InfluxDB in periodic windows and delivers it to the UDF as a batch:
+
+1. `begin_batch()` — Called when a new batch starts. Initialize any state needed to collect points.
+2. `point()` — Called for each point in the batch. Accumulate the point for later processing.
+3. `end_batch()` — Called when the batch is complete. Process all accumulated points at once using vectorized operations, write back the results, and emit the end-of-batch marker.
+
+### Batch UDF Template
+
+```python
+class MyBatchHandler(Handler):
+    def __init__(self, agent):
+        self._agent = agent
+        self._batch_points = []
+        self._begin_response = None
+        # Load your model here (same as stream UDF)
+        self.model = None  # Replace with your model
+
+    def info(self):
+        response = udf_pb2.Response()
+        response.info.wants = udf_pb2.BATCH
+        response.info.provides = udf_pb2.BATCH
+        return response
+
+    def begin_batch(self, begin_req):
+        """Initialize batch collection."""
+        self._batch_points = []
+        self._begin_response = udf_pb2.Response()
+        self._begin_response.beginBatch.CopyFrom(begin_req)
+
+    def point(self, point):
+        """Accumulate points for batch processing."""
+        self._batch_points.append(point)
+
+    def end_batch(self, end_req):
+        """Process all points at once using vectorized operations."""
+        # Write begin batch response
+        self._agent.write_response(self._begin_response)
+
+        # Extract features from all points for vectorized inference
+        # Example: features = np.array([p.fieldsDouble["feature"] for p in self._batch_points])
+        # predictions = self.model.predict(features.reshape(-1, 1))
+
+        # Process each point with its prediction and write responses
+        for point in self._batch_points:
+            # Apply your analysis logic using the batch predictions
+            response = udf_pb2.Response()
+            response.point.CopyFrom(point)
+            self._agent.write_response(response)
+
+        # Write end batch response
+        response = udf_pb2.Response()
+        response.endBatch.CopyFrom(end_req)
+        self._agent.write_response(response)
+```
+
+### Batch TICKscript
+
+Batch UDFs use a `batch` query in the TICKscript instead of a `stream`:
+
+```text
+dbrp "datain"."autogen"
+
+var data0 = batch
+    |query('SELECT * FROM "datain"."autogen"."your-measurement"')
+        .period(10s)
+        .every(10s)
+    @my_batch_udf()
+data0
+    |influxDBOut()
+        .database('datain')
+        .measurement('your-output-measurement')
+        .retentionPolicy('autogen')
+```
+
+The `.period()` controls the time window size and `.every()` controls how often the batch query runs.
+
+### Example
+
+See the [Wind Turbine Batch Anomaly Detection UDF](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config/udfs/windturbine_batch_anomaly_detector.py) for a complete example that uses Intel® Extension for Scikit-learn* to perform vectorized batch inference.
+
 ## Best Practices
 
 1. **Error Handling**: Always validate input data and handle missing fields gracefully.
@@ -267,9 +353,11 @@ var data = stream
 
 - [Kapacitor UDF Documentation](https://docs.influxdata.com/kapacitor/v1/guides/anomaly_detection/#writing-a-user-defined-function-udf)
 - [Example UDFs in Repository](https://github.com/open-edge-platform/edge-ai-suites/tree/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps)
-  - [Wind Turbine Anomaly Detection](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config/udfs/windturbine_anomaly_detector.py)
+  - [Wind Turbine Anomaly Detection (Stream)](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config/udfs/windturbine_anomaly_detector.py)
+  - [Wind Turbine Anomaly Detection (Batch)](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config/udfs/windturbine_batch_anomaly_detector.py)
   - [Weld Anomaly Detection](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/weld-anomaly-detection/time-series-analytics-config/udfs/weld_anomaly_detector.py)
 - [Kapacitor TICKscript Reference](https://docs.influxdata.com/kapacitor/v1/reference/tick/introduction/)
-  - [Wind Turbine Anomaly Detection](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config/tick_scripts/windturbine_anomaly_detector.tick)
+  - [Wind Turbine Anomaly Detection (Stream)](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config/tick_scripts/windturbine_anomaly_detector.tick)
+  - [Wind Turbine Anomaly Detection (Batch)](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/wind-turbine-anomaly-detection/time-series-analytics-config/tick_scripts/windturbine_batch_anomaly_detector.tick)
   - [Weld Anomaly Detection](https://github.com/open-edge-platform/edge-ai-suites/blob/main/manufacturing-ai-suite/industrial-edge-insights-time-series/apps/weld-anomaly-detection/time-series-analytics-config/tick_scripts/weld_anomaly_detector.tick)
 - [Configure Custom UDF Deployment](./configure-custom-udf.md)

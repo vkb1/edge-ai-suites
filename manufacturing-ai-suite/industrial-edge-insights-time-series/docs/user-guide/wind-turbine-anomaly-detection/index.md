@@ -77,6 +77,10 @@ The `udfs` section specifies the details of the UDFs used in the task.
 | `device`| Specifies the hardware `CPU` or `GPU` for executing the UDF model inference.Default is `cpu`| `cpu`                                  |
 
 > **Note:** The maximum allowed size for `config.json` is 5 KB.
+
+> **Note:** To use batch processing mode for improved throughput, use `config_batch.json` instead
+> of `config.json` when posting the configuration. The batch config sets
+> `"name": "windturbine_batch_anomaly_detector"` to use the batch UDF and TICKscript.
 ---
 
 **Alerts Configuration**:
@@ -99,16 +103,29 @@ The `mqtt` section specifies the MQTT broker details for sending alerts.
 
 ##### **`udfs/`**
 
-Contains the Python script to process the incoming data.
-Uses Random Forest Regressor and Linear Regression machine learning algos accelerated with
-[Intel® Extension for Scikit-learn*](https://www.intel.com/content/www/us/en/developer/tools/oneapi/scikit-learn.html)
-to run on CPU/GPU to detect the anomalous power generation data points relative to wind speed.
+Contains the Python scripts to process the incoming data.
+
+- **`windturbine_anomaly_detector.py`** (Stream mode): Processes individual data points as they arrive using
+  Random Forest Regressor and Linear Regression machine learning algos accelerated with
+  [Intel® Extension for Scikit-learn*](https://www.intel.com/content/www/us/en/developer/tools/oneapi/scikit-learn.html)
+  to run on CPU/GPU to detect the anomalous power generation data points relative to wind speed.
+
+- **`windturbine_batch_anomaly_detector.py`** (Batch mode): Collects multiple data points and processes them
+  together using vectorized operations for improved throughput and latency. Uses the same
+  Random Forest Regressor model with
+  [Intel® Extension for Scikit-learn*](https://www.intel.com/content/www/us/en/developer/tools/oneapi/scikit-learn.html)
+  batch inference for better performance numbers. To use batch mode, deploy with `config_batch.json`
+  instead of `config.json`.
 
 ##### **`tick_scripts/`**
 
-The TICKScript `windturbine_anomaly_detector.tick` determines processing of the input data
-coming in. The file contains the details on execution of the UDF file, storage of processed data and publishing of alerts.
-By default, it is configured to publish the alerts to **MQTT**.
+- **`windturbine_anomaly_detector.tick`** (Stream mode): The TICKScript determines processing of the input data
+  coming in as a stream. The file contains the details on execution of the UDF file, storage of processed data and publishing of alerts.
+  By default, it is configured to publish the alerts to **MQTT**.
+
+- **`windturbine_batch_anomaly_detector.tick`** (Batch mode): The TICKScript queries data from InfluxDB in periodic
+  batches (default: 10-second windows). This pairs with the batch UDF for improved throughput when measuring
+  performance numbers.
 
 ##### **`models/`**
 
