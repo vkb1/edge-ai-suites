@@ -206,7 +206,7 @@ class BatchAnomalyDetectorHandler(Handler):
                 check_for_anomalies = self._should_check_anomaly(x, y)
 
                 if check_for_anomalies:
-                    error = (y_pred - y) / (y)
+                    error = (y_pred - y) / y if y != 0 else 0
                     if error > self.error_threshold:
                         self.last_states.append(1)
                         self.last_anomalies.append((x, y))
@@ -225,7 +225,7 @@ class BatchAnomalyDetectorHandler(Handler):
                             lm = LinearRegression()
                             lm.fit(x_feat, y_feat)
 
-                        if abs(lm.coef_) < 200:
+                        if abs(lm.coef_[0]) < 200:
                             self.anomalies.append((x, y))
                             if error < 0.3:
                                 point.fieldsDouble["anomaly_status"] = 0.3

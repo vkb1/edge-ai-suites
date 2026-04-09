@@ -213,6 +213,8 @@ class MyBatchHandler(Handler):
 
     def info(self):
         response = udf_pb2.Response()
+        # Both wants and provides must be BATCH for batch mode UDFs
+        # (in stream mode, both would be set to STREAM instead)
         response.info.wants = udf_pb2.BATCH
         response.info.provides = udf_pb2.BATCH
         return response
