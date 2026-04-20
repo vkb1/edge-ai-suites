@@ -12,13 +12,13 @@ The `docker-compose.yml` defines these services:
 
 | Service | Image | Port | Purpose |
 |---------|-------|------|---------|
-| `ia-telegraf` | telegraf:1.38.0 | — | Data collection from MQTT/OPC-UA |
-| `ia-influxdb` | influxdb:1.12.2 | — | Time-series data storage |
+| `ia-telegraf` | telegraf:1.38.0 | Internal | Data collection from MQTT/OPC-UA |
+| `ia-influxdb` | influxdb:1.12.2 | Internal | Time-series data storage |
 | `ia-time-series-analytics-microservice` | Intel TSAM | 9092 | Kapacitor-based stream processing |
 | `ia-grafana` | grafana-oss:12.4.0-ubuntu | 3000 | Visualization |
 | `ia-mqtt-broker` | eclipse-mosquitto:2.0.22 | 1883 | MQTT message broker |
 | `ia-opcua-server` | Custom (Python 3.13) | 4840 | OPC-UA data simulator |
-| `ia-mqtt-publisher` | Custom (Python 3.13) | — | MQTT data simulator |
+| `ia-mqtt-publisher` | Custom (Python 3.13) | Internal | MQTT data simulator |
 | `nginx` | nginx:1.29.5-trixie-perl | 15443 | Reverse proxy with SSL |
 
 ### Building Docker Images

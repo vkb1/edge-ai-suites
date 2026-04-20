@@ -26,7 +26,7 @@ This is a monorepo containing industry-specific AI SDK sample applications organ
 ## Coding Standards
 
 ### Python
-- Use Python 3.11+ for all new code.
+- Use Python 3.13+ for all new code (simulators use Python 3.13; CI linting uses 3.11).
 - Follow PEP 8 style guidelines. The CI pipeline runs **Pylint** on all Python code.
 - Static analysis is performed with **Bandit** (security) and **CodeQL** (SAST).
 - Use `Intel Extension for Scikit-learn` (`sklearnex`) when applicable for ML workloads.
