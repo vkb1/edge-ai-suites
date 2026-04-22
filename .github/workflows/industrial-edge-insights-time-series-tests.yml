@@ -21,22 +21,16 @@ on:
         type: string
         default: 'yes'
       tests:
-        description: 'Which tests to run'
-        type: choice
-        options:
-        - all-tests
-        - timeseries-all
-        - multimodal-all
-        - test_docker_deployment_stability
-        - test_docker_deployment_weld_anomaly
-        - test_docker_deployment_wind_turbine
-        - test_docker_helm_deployment_security
-        - test_docker_influxdb_retention
-        - test_helm_deployment_weld_anomaly
-        - test_helm_deployment_wind_turbine
-        - test_helm_influxdb_retention
-        - test_docker_deployment_multimodal
-        - test_helm_deployment_multimodal
+        description: >-
+          Which tests to run (comma-separated for multiple).
+          Options: all-tests, timeseries-all, multimodal-all,
+          test_docker_deployment_stability, test_docker_deployment_weld_anomaly,
+          test_docker_deployment_wind_turbine, test_docker_helm_deployment_security,
+          test_docker_influxdb_retention, test_helm_deployment_weld_anomaly,
+          test_helm_deployment_wind_turbine, test_helm_influxdb_retention,
+          test_docker_deployment_multimodal, test_helm_deployment_multimodal
+        type: string
+        required: false
         default: all-tests
       skip_long_tests:
         description: 'Skip long-running tests that take 1 hour or more (yes/no)'
@@ -56,7 +50,7 @@ on:
         type: string
         default: 'yes'
       tests:
-        description: 'Which tests to run (all-tests, timeseries-all, multimodal-all, or specific test file name)'
+        description: 'Which tests to run (comma-separated for multiple, e.g. test_docker_deployment_stability,test_helm_deployment_weld_anomaly)'
         required: false
         type: string
         default: 'all-tests'
@@ -170,9 +164,27 @@ jobs:
             test_docker_influxdb_retention test_helm_deployment_weld_anomaly \
             test_helm_deployment_wind_turbine test_helm_influxdb_retention"
 
-          # Skip if only multimodal tests are selected
-          if [[ "$TESTS" == "multimodal-all" || "$TESTS" == "test_docker_deployment_multimodal" || "$TESTS" == "test_helm_deployment_multimodal" ]]; then
-            echo "Skipping time-series tests (only multimodal tests selected)"
+          # Parse comma-separated selections into an array (trim whitespace)
+          IFS=',' read -ra SELECTED_TESTS <<< "$TESTS"
+          SELECTED_TESTS=("${SELECTED_TESTS[@]// /}")
+
+          # Check if any selected test is relevant to this step
+          RUN_ALL=false
+          SPECIFIC_FILES=()
+          SKIP_STEP=true
+          for sel in "${SELECTED_TESTS[@]}"; do
+            if [[ "$sel" == "all-tests" || "$sel" == "timeseries-all" ]]; then
+              RUN_ALL=true
+              SKIP_STEP=false
+              break
+            elif echo "$TIMESERIES_TESTS" | grep -qw "$sel"; then
+              SPECIFIC_FILES+=("${sel}.py")
+              SKIP_STEP=false
+            fi
+          done
+
+          if [[ "$SKIP_STEP" == "true" ]]; then
+            echo "Skipping time-series tests (no time-series tests selected)"
             exit 0
           fi
 
@@ -194,19 +206,19 @@ jobs:
           # List tests that will be collected (helps debug which tests run/are skipped)
           echo ""
           echo "========== Collecting tests =========="
-          if echo "$TIMESERIES_TESTS" | grep -qw "$TESTS"; then
-            pytest --collect-only -q "${MARKER_ARGS[@]}" "${TESTS}.py" 2>&1 || true
+          if [[ "$RUN_ALL" == "false" ]]; then
+            pytest --collect-only -q "${MARKER_ARGS[@]}" "${SPECIFIC_FILES[@]}" 2>&1 || true
           else
             pytest --collect-only -q "${MARKER_ARGS[@]}" 2>&1 || true
           fi
           echo "======================================"
           echo ""
 
-          # Run specific test file if selected, otherwise run all tests
+          # Run specific test files if selected, otherwise run all tests
           set +e
-          if echo "$TIMESERIES_TESTS" | grep -qw "$TESTS"; then
+          if [[ "$RUN_ALL" == "false" ]]; then
             pytest -vv --tb=short --self-contained-html --html=/tmp/test_timeseries_report/report.html \
-              --junitxml=/tmp/test_timeseries_report/junit.xml "${MARKER_ARGS[@]}" "${TESTS}.py"
+              --junitxml=/tmp/test_timeseries_report/junit.xml "${MARKER_ARGS[@]}" "${SPECIFIC_FILES[@]}"
           else
             pytest -vv --tb=short --self-contained-html --html=/tmp/test_timeseries_report/report.html \
               --junitxml=/tmp/test_timeseries_report/junit.xml "${MARKER_ARGS[@]}"
@@ -280,9 +292,27 @@ jobs:
           # Multimodal-specific test files
           MULTIMODAL_TESTS="test_docker_deployment_multimodal test_helm_deployment_multimodal"
 
-          # Skip if only timeseries tests are selected
-          if [[ "$TESTS" == "timeseries-all" ]] || echo "$TESTS" | grep -qw "test_docker_deployment_stability\|test_docker_deployment_weld_anomaly\|test_docker_deployment_wind_turbine\|test_docker_helm_deployment_security\|test_docker_influxdb_retention\|test_helm_deployment_weld_anomaly\|test_helm_deployment_wind_turbine\|test_helm_influxdb_retention"; then
-            echo "Skipping multimodal tests (only time-series tests selected)"
+          # Parse comma-separated selections into an array (trim whitespace)
+          IFS=',' read -ra SELECTED_TESTS <<< "$TESTS"
+          SELECTED_TESTS=("${SELECTED_TESTS[@]// /}")
+
+          # Check if any selected test is relevant to this step
+          RUN_ALL=false
+          SPECIFIC_FILES=()
+          SKIP_STEP=true
+          for sel in "${SELECTED_TESTS[@]}"; do
+            if [[ "$sel" == "all-tests" || "$sel" == "multimodal-all" ]]; then
+              RUN_ALL=true
+              SKIP_STEP=false
+              break
+            elif echo "$MULTIMODAL_TESTS" | grep -qw "$sel"; then
+              SPECIFIC_FILES+=("${sel}.py")
+              SKIP_STEP=false
+            fi
+          done
+
+          if [[ "$SKIP_STEP" == "true" ]]; then
+            echo "Skipping multimodal tests (no multimodal tests selected)"
             exit 0
           fi
 
@@ -304,19 +334,19 @@ jobs:
           # List tests that will be collected (helps debug which tests run/are skipped)
           echo ""
           echo "========== Collecting tests =========="
-          if echo "$MULTIMODAL_TESTS" | grep -qw "$TESTS"; then
-            pytest --collect-only -q "${MARKER_ARGS[@]}" "${TESTS}.py" 2>&1 || true
+          if [[ "$RUN_ALL" == "false" ]]; then
+            pytest --collect-only -q "${MARKER_ARGS[@]}" "${SPECIFIC_FILES[@]}" 2>&1 || true
           else
             pytest --collect-only -q "${MARKER_ARGS[@]}" 2>&1 || true
           fi
           echo "======================================"
           echo ""
 
-          # Run specific test file if selected, otherwise run all tests
+          # Run specific test files if selected, otherwise run all tests
           set +e
-          if echo "$MULTIMODAL_TESTS" | grep -qw "$TESTS"; then
+          if [[ "$RUN_ALL" == "false" ]]; then
             pytest -vv --tb=short --self-contained-html --html=/tmp/test_multimodal_report/report.html \
-              --junitxml=/tmp/test_multimodal_report/junit.xml "${MARKER_ARGS[@]}" "${TESTS}.py"
+              --junitxml=/tmp/test_multimodal_report/junit.xml "${MARKER_ARGS[@]}" "${SPECIFIC_FILES[@]}"
           else
             pytest -vv --tb=short --self-contained-html --html=/tmp/test_multimodal_report/report.html \
               --junitxml=/tmp/test_multimodal_report/junit.xml "${MARKER_ARGS[@]}"
