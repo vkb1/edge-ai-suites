@@ -144,9 +144,8 @@ jobs:
       id: get-sha
       env:
         TARGET_BRANCH: ${{ github.ref_name }}
-        HAS_CHANGES: ${{ steps.submodule-status.outputs.has_changes }}
       run: |
-        if [ "$HAS_CHANGES" == "true" ]; then
+        if [ "${{ steps.submodule-status.outputs.has_changes }}" == "true" ]; then
           # Get the latest commit from the target branch after merge
           git fetch origin "$TARGET_BRANCH"
           COMMIT_SHA=$(git rev-parse origin/$TARGET_BRANCH)
@@ -158,12 +157,9 @@ jobs:
         echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
 
     - name: Create annotated tag via API
-      env:
-        TAG_PREFIX: ${{ vars.SIV_WEEKLY_BUILD_PREFIX }}
-        COMMIT_SHA_INPUT: ${{ steps.get-sha.outputs.sha }}
       run: |
-        TAG_NAME="${TAG_PREFIX}-$(date +'%Y%m%d')"
-        COMMIT_SHA="${COMMIT_SHA_INPUT}"
+        TAG_NAME="${{ vars.SIV_WEEKLY_BUILD_PREFIX }}-$(date +'%Y%m%d')"
+        COMMIT_SHA="${{ steps.get-sha.outputs.sha }}"
         TAG_MESSAGE="Weekly Build - ${TAG_NAME}"
 
         echo "🚀 Creating tag: $TAG_NAME"
