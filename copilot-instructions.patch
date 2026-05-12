@@ -1,0 +1,1419 @@
+From bf60452879b10cb01d3166ea2bde35b07319172a Mon Sep 17 00:00:00 2001
+From: "copilot-swe-agent[bot]" <198982749+Copilot@users.noreply.github.com>
+Date: Mon, 20 Apr 2026 08:03:49 +0000
+Subject: [PATCH 1/2] Add GitHub Copilot instructions, agents, and skills for
+ Edge AI Suites
+
+Created comprehensive copilot configuration files:
+- .github/copilot-instructions.md: Repository-wide coding standards, security,
+  and compliance guidelines
+- .github/instructions/manufacturing-multimodal.instructions.md: Component-specific
+  guidance for the multimodal weld defect detection application
+- .github/instructions/workflows.instructions.md: CI/CD workflow development standards
+- .github/copilot-agents.yml: 5 specialized agents (security-compliance,
+  docker-deployment, testing, ci-workflow, documentation)
+- .github/skills/: 5 skill definitions (security-scanning, docker-compose,
+  helm-charts, testing, license-compliance)
+
+Agent-Logs-Url: https://github.com/vkb1/edge-ai-suites/sessions/62ceea6c-79e9-4eeb-9174-1f04143939f3
+
+Co-authored-by: vkb1 <19564820+vkb1@users.noreply.github.com>
+---
+ .github/copilot-agents.yml                    | 244 ++++++++++++++++++
+ .github/copilot-instructions.md               | 158 ++++++++++++
+ .../manufacturing-multimodal.instructions.md  | 117 +++++++++
+ .../instructions/workflows.instructions.md    | 173 +++++++++++++
+ .github/skills/docker-compose.skill.md        | 129 +++++++++
+ .github/skills/helm-charts.skill.md           | 114 ++++++++
+ .github/skills/license-compliance.skill.md    | 119 +++++++++
+ .github/skills/security-scanning.skill.md     | 100 +++++++
+ .github/skills/testing.skill.md               | 137 ++++++++++
+ 9 files changed, 1291 insertions(+)
+ create mode 100644 .github/copilot-agents.yml
+ create mode 100644 .github/copilot-instructions.md
+ create mode 100644 .github/instructions/manufacturing-multimodal.instructions.md
+ create mode 100644 .github/instructions/workflows.instructions.md
+ create mode 100644 .github/skills/docker-compose.skill.md
+ create mode 100644 .github/skills/helm-charts.skill.md
+ create mode 100644 .github/skills/license-compliance.skill.md
+ create mode 100644 .github/skills/security-scanning.skill.md
+ create mode 100644 .github/skills/testing.skill.md
+
+diff --git a/.github/copilot-agents.yml b/.github/copilot-agents.yml
+new file mode 100644
+index 00000000..74514eb4
+--- /dev/null
++++ b/.github/copilot-agents.yml
+@@ -0,0 +1,244 @@
++# GitHub Copilot Agents — Edge AI Suites
++# Defines specialized agents for development, compliance, and operations tasks.
++
++agents:
++  # ============================================================================
++  # Security & Compliance Agent
++  # ============================================================================
++  security-compliance:
++    name: "Security & Compliance Agent"
++    description: >
++      Ensures code changes comply with Intel's security requirements, licensing
++      obligations, and container hardening standards. Reviews Dockerfiles, Compose
++      files, Helm charts, Python code, and CI workflows for security best practices.
++    instructions: |
++      You are a security and compliance specialist for the Edge AI Suites project.
++
++      ## Your Responsibilities
++
++      ### License Compliance
++      - Verify every source file has the Apache 2.0 SPDX license header
++      - Check that no incompatible third-party licenses are introduced
++      - Ensure `third-party-programs.txt` is updated when dependencies change
++      - Verify copyleft source download support (`COPYLEFT_SOURCES=true` build arg) in Dockerfiles
++
++      ### Container Security
++      - Ensure all containers run as non-root user (UID 2999, `TIMESERIES_USER_NAME`)
++      - Verify `read_only: true` and `security_opt: [no-new-privileges:true]` in Docker Compose
++      - Check that no secrets are embedded in Docker images or committed to source
++      - Validate that unnecessary packages are removed (e.g., `perl-base`)
++      - Verify HEALTHCHECK directives are present in Dockerfiles
++      - Ensure tmpfs volumes are used for runtime data
++
++      ### Credential Security
++      - Usernames: minimum 5 alphabetic characters; InfluxDB username must not be "admin"
++      - Passwords: minimum 10 alphanumeric characters with at least one digit and one letter
++      - Verify `.env` and `helm/values.yaml` have restrictive permissions (chmod 600)
++      - Confirm no hardcoded credentials in source files
++      - In CI workflows, verify random credential generation using /dev/urandom
++
++      ### GitHub Actions Security
++      - All actions must be pinned by full commit SHA
++      - `persist-credentials: false` on all checkout steps
++      - Minimal permissions declared per job
++      - No secrets logged or echoed in steps
++
++      ### Dependency Security
++      - All Python packages pinned to exact versions
++      - Docker base images pinned to specific tags
++      - Check for known vulnerabilities in dependencies
++
++      When reviewing changes, provide specific line references and remediation steps.
++
++  # ============================================================================
++  # Docker & Deployment Agent
++  # ============================================================================
++  docker-deployment:
++    name: "Docker & Deployment Agent"
++    description: >
++      Assists with Docker Compose and Helm chart development, deployment
++      troubleshooting, and container orchestration for the multimodal
++      weld defect detection application.
++    instructions: |
++      You are a Docker and Kubernetes deployment specialist for Edge AI Suites.
++
++      ## Your Responsibilities
++
++      ### Docker Compose
++      - Help author and maintain docker-compose.yml with the project's conventions:
++        - `ia-` prefix for Intel Application services
++        - Bridge network: `timeseries_network`
++        - `depends_on` with `condition: service_healthy`
++        - `read_only: true`, `no-new-privileges`, non-root users
++        - tmpfs volumes for all runtime data
++        - Environment variables from .env, never hardcoded
++      - Assist with service startup ordering and health checks
++      - Help configure resource limits (memory, CPU)
++
++      ### Helm Charts
++      - Maintain Chart.yaml, values.yaml, values.schema.json, and templates/
++      - Follow date-based versioning (e.g., 2026.0)
++      - Ensure all configurable parameters are exposed in values.yaml
++      - Validate templates render correctly with `helm template`
++
++      ### Makefile
++      - Maintain build, up, down, push_images, gen_helm_charts, push_helm_charts targets
++      - Ensure validation targets run before deployment (validate_host_ip, check_env_variables)
++      - Support GPU device path auto-detection (DRI_MOUNT_PATH)
++
++      ### Troubleshooting
++      - Help diagnose container startup failures using `docker logs`
++      - Assist with network connectivity issues between services
++      - Help resolve MQTT broker connection issues
++      - Debug InfluxDB data flow problems
++      - Troubleshoot Grafana dashboard provisioning
++
++      The application has 13+ services; always consider inter-service dependencies.
++
++  # ============================================================================
++  # Testing Agent
++  # ============================================================================
++  testing:
++    name: "Testing Agent"
++    description: >
++      Helps write and maintain functional tests for Docker Compose and Helm
++      deployments, including MQTT, InfluxDB, Grafana, and S3 storage validation.
++    instructions: |
++      You are a test automation specialist for Edge AI Suites.
++
++      ## Your Responsibilities
++
++      ### Test Framework
++      - Use pytest with pytest-html for HTML test reports
++      - Test files: `test_docker_deployment_*.py` and `test_helm_deployment_*.py`
++      - Configuration in `tests/functional/pytest.ini`
++      - Dependencies in `tests/requirements.txt`
++
++      ### Test Patterns
++      - Validate all containers are running and healthy
++      - Test MQTT broker connectivity and topic subscriptions
++      - Verify InfluxDB data ingestion and query results
++      - Check Grafana dashboard provisioning and data source connectivity
++      - Validate S3 (SeaweedFS) bucket creation and object storage
++      - Test fusion analytics output (AND/OR modes)
++      - Verify nginx reverse proxy (HTTPS on port 15443)
++      - Test WebRTC/RTSP streaming via MediaMTX
++
++      ### Running Tests
++      ```bash
++      cd tests
++      python -m venv .venv && source .venv/bin/activate
++      pip install -r requirements.txt
++      # Docker tests
++      pytest -v -s --html=docker_multimodal_report.html functional/test_docker_deployment_multimodal.py
++      # Helm tests
++      pytest -v -s --html=helm_multimodal_report.html functional/test_helm_deployment_multimodal.py
++      ```
++
++      ### Best Practices
++      - Tests must be idempotent and clean up after themselves
++      - Use appropriate timeouts for container startup (services may take 30-60 seconds)
++      - Test both Docker Compose and Helm deployment methods
++      - Include negative test cases (invalid configs, missing env vars)
++
++  # ============================================================================
++  # CI/CD Workflow Agent
++  # ============================================================================
++  ci-workflow:
++    name: "CI/CD Workflow Agent"
++    description: >
++      Assists with creating and maintaining GitHub Actions workflows for
++      building, testing, scanning, and deploying Edge AI Suite applications.
++    instructions: |
++      You are a GitHub Actions CI/CD specialist for Edge AI Suites.
++
++      ## Your Responsibilities
++
++      ### Workflow Standards
++      - Pin all actions by commit SHA with version comment
++      - Set `persist-credentials: false` on all checkout steps
++      - Declare minimal permissions per job
++      - Use concurrency controls for PR workflows
++      - Use ubuntu-24.04 runners
++      - Include workflow_dispatch for manual triggering
++      - Add SPDX license headers to workflow files
++
++      ### Workflow Types
++      1. PR Workflows: Build and deploy validation triggered on path changes
++      2. Scan Workflows: Security scanning (Trivy, Bandit, CodeQL, Pylint, Zizmor)
++      3. Test Workflows: Functional tests (daily schedule + manual dispatch)
++      4. Documentation Workflows: Docs build validation
++      5. Weekly Packaging: Helm chart packaging and pushing
++
++      ### Security Scanning Integration
++      Required scans for each application:
++      - Trivy: filesystem, image, config, Dockerfile, Helm
++      - Bandit: Python static security analysis
++      - CodeQL: Semantic code analysis
++      - Pylint: Python code quality
++      - Zizmor: GitHub Actions security analysis
++
++      ### CI Credential Management
++      - Generate random credentials using /dev/urandom and openssl rand
++      - Update .env files with sed substitutions
++      - Never use static test credentials
++      - Clean up Docker resources at job start
++
++      ### Reusable Workflows
++      Use `workflow_call` for shared scan and test logic. Reference:
++      ```yaml
++      jobs:
++        scans:
++          uses: ./.github/workflows/component-scans.yml
++          with:
++            target: all-scans
++      ```
++
++  # ============================================================================
++  # Documentation Agent
++  # ============================================================================
++  documentation:
++    name: "Documentation Agent"
++    description: >
++      Assists with maintaining documentation including READMEs, CHANGELOGs,
++      user guides, API docs, architecture diagrams, and Sphinx-based documentation.
++    instructions: |
++      You are a technical documentation specialist for Edge AI Suites.
++
++      ## Your Responsibilities
++
++      ### Documentation Types
++      - README.md: Component overview, quick start, architecture, links
++      - CHANGELOG.md: Version history with date-based versioning (2026.0)
++      - docs/: Sphinx-based user guides, API documentation, troubleshooting
++      - README-dockerhub.md: Docker Hub container descriptions
++      - third-party-programs.txt: Third-party license tracking
++
++      ### CHANGELOG Format
++      Follow the existing format:
++      ```markdown
++      ## 2026.0 (March 2026)
++      ### Added
++      - New feature description
++      ### Changed
++      - Changed behavior description
++      ### Fixed
++      - Bug fix description
++      ### Security
++      - Security improvement description
++      ```
++
++      ### Documentation Standards
++      - Use clear, concise language
++      - Include architecture diagrams where applicable
++      - Document all environment variables with descriptions and defaults
++      - Provide troubleshooting sections for common issues
++      - Link to Intel's official documentation at docs.openedgeplatform.intel.com
++      - Include system requirements and prerequisites
++
++      ### PR Documentation
++      Follow the PR template requirements:
++      - Summary of changes and related issue
++      - New dependency disclosure (name, license, usage)
++      - Test description and reproduction steps
++      - Checklist: Apache 2.0, no incompatible licenses, no secrets, self-review
+diff --git a/.github/copilot-instructions.md b/.github/copilot-instructions.md
+new file mode 100644
+index 00000000..1d77a699
+--- /dev/null
++++ b/.github/copilot-instructions.md
+@@ -0,0 +1,158 @@
++# GitHub Copilot Instructions — Edge AI Suites
++
++## Project Overview
++
++Edge AI Suites is an Intel Open Edge Platform repository containing production-ready AI application suites for manufacturing, metro/smart-city, retail, robotics, education, and health & life sciences. Each suite contains sample applications that run on edge hardware using Docker Compose or Helm chart deployments.
++
++## Repository Structure
++
++```
++edge-ai-suites/
++├── manufacturing-ai-suite/          # Industrial defect detection, asset tracking, vision, time-series, GenAI
++│   ├── industrial-edge-insights-multimodal/   # Vision + time-series fusion for weld defect detection
++│   ├── industrial-edge-insights-time-series/  # Time-series anomaly detection
++│   ├── industrial-edge-insights-vision/       # Vision-based defect detection
++│   └── hmi-augmented-worker/                  # HMI augmented worker app
++├── metro-ai-suite/                  # Smart city, traffic, video analytics
++├── retail-ai-suite/                 # Self-checkout, loss prevention
++├── robotics-ai-suite/              # Perception, navigation, simulation
++├── education-ai-suite/             # Education AI applications
++├── health-and-life-sciences-ai-suite/  # Healthcare monitoring (preview)
++└── .github/
++    ├── workflows/                   # CI/CD pipelines
++    ├── CODEOWNERS                   # Code ownership for review routing
++    ├── PULL_REQUEST_TEMPLATE.md     # PR template
++    └── ISSUE_TEMPLATE/              # Bug and feature request templates
++```
++
++## Tech Stack
++
++- **Languages**: Python 3.13, Bash, YAML, JSON
++- **Container Orchestration**: Docker Compose, Kubernetes (Helm charts)
++- **Time-Series**: InfluxDB 1.12.x, Kapacitor, Telegraf 1.38.x
++- **Message Broker**: Eclipse Mosquitto (MQTT) 2.0.x
++- **Visualization**: Grafana 12.x
++- **Video Processing**: Intel DL Streamer Pipeline Server, MediaMTX, RTSP/WebRTC
++- **Object Storage**: SeaweedFS (S3-compatible)
++- **Networking**: nginx (reverse proxy/TLS), Coturn (TURN/WebRTC)
++- **ML/AI**: CatBoost, DeiT models, OpenCV, OpenTelemetry
++- **Testing**: pytest, Playwright, pytest-html
++- **Security Scanning**: Trivy, Bandit, CodeQL, Zizmor, Pylint
++- **CI/CD**: GitHub Actions on ubuntu-24.04 runners
++
++## Coding Standards
++
++### License Headers
++
++Every source file **must** include the Apache 2.0 license header:
++
++```python
++#
++# Apache v2 license
++# Copyright (C) 2025 Intel Corporation
++# SPDX-License-Identifier: Apache-2.0
++#
++```
++
++For YAML files use the SPDX form:
++```yaml
++# SPDX-FileCopyrightText: (C) 2025 Intel Corporation
++# SPDX-License-Identifier: Apache-2.0
++```
++
++### Python Code
++
++- Target Python 3.13 (base image: `python:3.13-slim`)
++- Use type hints for function signatures (`from typing import Dict, Optional, Any, Literal`)
++- Use `logging` module with configurable `LOG_LEVEL` environment variable — never use bare `print()` for application output
++- Use `os.getenv()` with sensible defaults for all configuration
++- Follow PEP 8 naming conventions; use meaningful variable and function names
++- Pin all dependency versions exactly in `requirements.txt` (e.g., `paho-mqtt==2.1.0`)
++- Document modules and functions with docstrings
++
++### Docker / Container Standards
++
++- Base images: Use official slim variants (e.g., `python:3.13-slim`)
++- Always create a non-root user (`TIMESERIES_UID` / `TIMESERIES_USER_NAME`) and switch to it with `USER`
++- Set `read_only: true`, `security_opt: [no-new-privileges:true]`, and `seccomp:unconfined` where appropriate
++- Use `tmpfs` volumes for runtime data rather than persistent bind mounts
++- Include `HEALTHCHECK` directives in Dockerfiles
++- Support `COPYLEFT_SOURCES` build arg for license compliance
++- Remove unnecessary packages (e.g., `perl-base`) to reduce attack surface
++- Never embed secrets in images — use environment variables injected at runtime
++
++### Docker Compose
++
++- Name services with `ia-` prefix for Intel Application containers
++- Use bridge networks (e.g., `timeseries_network`)
++- Use `depends_on` with `condition: service_healthy` for startup ordering
++- Environment variables sourced from `.env` files — never hardcode credentials
++- Include `deploy.resources.limits` for memory/CPU where applicable
++
++### Helm Charts
++
++- Follow the structure: `Chart.yaml`, `values.yaml`, `values.schema.json`, `templates/`
++- Version charts using date-based versioning (e.g., `2026.0`)
++- Validate all user inputs with `values.schema.json`
++- Templates must support configurable resource limits, image tags, and credentials
++
++### Makefile Conventions
++
++- Use `.PHONY` for all non-file targets
++- Include validation targets (`validate_host_ip`, `check_env_variables`) called before deployment
++- Set `chmod 600` on files containing credentials (`.env`, `helm/values.yaml`)
++- Support `help` target listing all available commands
++
++### Commit Messages
++
++- Use present tense: "Add feature" not "Added feature"
++- Capitalize the first letter
++- Keep under 50 characters
++- Include `Signed-off-by:` line (Developer Certificate of Origin required)
++
++## Security Requirements
++
++- **No secrets in code**: Credentials must be injected via environment variables, never hardcoded
++- **Password rules**: Minimum 10 alphanumeric characters with at least one digit for passwords; minimum 5 alphabetic characters for usernames
++- **Container hardening**: Read-only filesystems, non-root users (UID 2999), no privilege escalation, seccomp profiles
++- **TLS everywhere**: nginx proxies Grafana over HTTPS (port 15443); auto-generated self-signed certificates for development
++- **Dependency pinning**: All Python packages, Docker images, and GitHub Actions must be version-pinned (actions pinned by SHA)
++- **Security scanning**: Trivy (filesystem, image, config, Dockerfile, Helm), Bandit (Python), CodeQL, Zizmor (GitHub Actions), Pylint
++- Report vulnerabilities per Intel's [vulnerability handling guidelines](https://www.intel.com/content/www/us/en/security-center/vulnerability-handling-guidelines.html)
++
++## Testing
++
++- Use `pytest` with `pytest-html` for HTML test reports
++- Test files follow naming: `test_docker_deployment_*.py`, `test_helm_deployment_*.py`
++- Tests validate Docker Compose and Helm deployments end-to-end
++- Run tests in a virtual environment with dependencies from `tests/requirements.txt`
++- Functional tests check container health, MQTT connectivity, InfluxDB data flow, Grafana dashboards
++
++## CI/CD Workflows
++
++- Workflows trigger on `pull_request` to specific paths and on `workflow_dispatch`
++- Use `ubuntu-24.04` runners
++- Concurrency: one workflow per PR (`cancel-in-progress: true`)
++- Pin all action versions by commit SHA (e.g., `actions/checkout@8e8c483...`)
++- Permissions follow least privilege: declare only needed `contents: read`, `packages: read`, etc.
++- Security scans run as part of PR workflow (Trivy, Bandit, CodeQL, Zizmor)
++- Functional tests run daily at 14:00 UTC and on demand
++
++## PR and Contribution Guidelines
++
++When creating or reviewing PRs, ensure:
++
++1. **License compliance**: Apache 2.0 headers on all new files; no incompatible 3rd party licenses
++2. **No secrets**: No passwords, tokens, or confidential data committed
++3. **Self-review**: Code reviewed before submission
++4. **Testing**: Changes tested locally; describe test setup in PR
++5. **Dependencies**: Any new 3rd party dependency must be listed with name, license, and usage
++6. **DCO sign-off**: All commits signed with `Signed-off-by: Name <email>`
++7. **Documentation**: Update relevant docs, README, CHANGELOG when applicable
++
++## Third-Party License Tracking
++
++All third-party dependencies (Docker images, Python packages) are tracked in `third-party-programs.txt` with:
++- Package name and version
++- License type (Apache 2.0, MIT, BSD, EPL, AGPLv3, etc.)
++- For copyleft dependencies (GPL, LGPL, MPL, EPL, CDDL): source download support via `COPYLEFT_SOURCES=true` build arg
+diff --git a/.github/instructions/manufacturing-multimodal.instructions.md b/.github/instructions/manufacturing-multimodal.instructions.md
+new file mode 100644
+index 00000000..e4672322
+--- /dev/null
++++ b/.github/instructions/manufacturing-multimodal.instructions.md
+@@ -0,0 +1,117 @@
++# Industrial Edge Insights Multimodal — Copilot Instructions
++
++applyTo:
++  - "manufacturing-ai-suite/industrial-edge-insights-multimodal/**"
++
++## Component Overview
++
++This sample application performs **multimodal weld defect detection** by fusing vision-based defect classification with time-series anomaly detection. It uses MQTT for data ingestion, InfluxDB for storage, Grafana for visualization, and SeaweedFS for S3-compatible object storage.
++
++## Architecture
++
++```
++RTSP Camera Feed → DL Streamer Pipeline Server → MQTT (vision_weld_defect_classification)
++                                                          ↓
++Sensor Data → Weld Data Simulator → MQTT (ts_weld_anomaly_detection)
++                                                          ↓
++                                              Fusion Analytics Module
++                                                   (AND/OR logic)
++                                                          ↓
++                                               InfluxDB + Grafana
++```
++
++### Key Services (13+ containers)
++
++| Service | Image/Base | Purpose |
++|---------|-----------|---------|
++| `ia-telegraf` | telegraf:1.38.0 | MQTT→InfluxDB data bridge |
++| `ia-influxdb` | influxdb:1.12.2 | Time-series database |
++| `ia-time-series-analytics-microservice` | Intel custom | Kapacitor-based anomaly detection |
++| `ia-grafana` | grafana-oss:12.4.0-ubuntu | Visualization dashboards |
++| `ia-mqtt-broker` | eclipse-mosquitto:2.0.22 | MQTT message broker |
++| `ia-weld-data-simulator` | Intel custom | RTSP + MQTT data publisher |
++| `nginx` | nginx:1.29.5-trixie-perl | Reverse proxy (HTTPS on 15443) |
++| `ia-fusion-analytics` | Intel custom | Vision + TS fusion module |
++| `dlstreamer-pipeline-server` | Intel DL Streamer | Video processing pipeline |
++| `mediamtx` | mediamtx:1.16.3 | RTSP/WebRTC media server |
++| `seaweedfs-*` | seaweedfs:4.15 | S3-compatible object storage |
++| `coturn` | coturn:4.9.0 | TURN server for WebRTC |
++
++## Development Patterns
++
++### Fusion Analytics Module (`fusion-analytics/`)
++
++- **Entry point**: `fusion.py` — subscribes to MQTT topics, performs timestamp-based message matching, writes fused results to InfluxDB
++- **Fusion modes**: `AND` (both vision + TS must detect anomaly) or `OR` (either triggers alert)
++- **Timestamp tolerance**: Configurable via `TOLERANCE_NS` (default 50ms = 50e6 ns)
++- **Buffer management**: Rolling deque of 100/1000 messages per source
++- **Dependencies**: paho-mqtt, pandas, numpy, influxdb (all pinned in `requirements.txt`)
++
++### Weld Data Simulator (`weld-data-simulator/`)
++
++- **Entry point**: `publisher.py` — publishes RTSP video streams and MQTT time-series data
++- **Data source**: Intel Robotic Welding Multimodal Dataset
++- **Modes**: Continuous (`CONTINUOUS_SIMULATOR_INGESTION=true`) or one-time ingestion
++- **Dependencies**: opencv-python, paho-mqtt, pandas
++
++### Configuration (`configs/`)
++
++- `time-series-analytics-microservice/`: Pipeline config, UDF scripts, ML models (DeiT), Kapacitor tick scripts
++- `grafana/`: Dashboard provisioning, data sources, weld defect detection dashboard JSON
++- `dlstreamer-pipeline-server/`: Video pipeline configuration
++- `mqtt-broker/`: Mosquitto configuration
++- `telegraf/`: Input plugin configuration and entrypoint scripts
++- `nginx/`: Reverse proxy and TLS certificate generation
++- `seaweedfs-s3/`: S3 bucket configuration and initialization
++
++### Environment Variables (`.env`)
++
++Critical credentials that must be set before deployment:
++- `INFLUXDB_USERNAME` / `INFLUXDB_PASSWORD` — InfluxDB credentials
++- `VISUALIZER_GRAFANA_USER` / `VISUALIZER_GRAFANA_PASSWORD` — Grafana credentials
++- `MTX_WEBRTCICESERVERS2_0_USERNAME` / `MTX_WEBRTCICESERVERS2_0_PASSWORD` — MediaMTX WebRTC
++- `S3_STORAGE_USERNAME` / `S3_STORAGE_PASSWORD` — SeaweedFS S3 credentials
++- `HOST_IP` — Must be set to a valid IPv4 address
++
++**Validation rules** (enforced by Makefile):
++- Usernames: 5+ alphabetic chars only; InfluxDB username must not be "admin"
++- Passwords: 10+ alphanumeric chars with at least one digit and one letter
++
++### Makefile Targets
++
++| Target | Description |
++|--------|-------------|
++| `make build` | Build Docker containers with `--pull` |
++| `make up` | Validate env, start containers, upload UDF config |
++| `make down` | Stop containers, remove volumes |
++| `make status` | Check container health and error logs |
++| `make push_images` | Push images to Docker registry |
++| `make gen_helm_charts` | Generate Helm packages |
++| `make push_helm_charts` | Package and push Helm charts to OCI registry |
++
++### Testing (`tests/`)
++
++- **Docker tests**: `pytest -v -s --html=docker_multimodal_report.html test_docker_deployment_multimodal.py`
++- **Helm tests**: `pytest -v -s --html=helm_multimodal_report.html test_helm_deployment_multimodal.py`
++- Install test deps in venv: `pip install -r tests/requirements.txt`
++- Tests validate: container health, MQTT connectivity, InfluxDB writes, Grafana dashboards, S3 storage
++
++### Helm Deployment (`helm/`)
++
++- Chart versioning follows date-based format: `2026.0`
++- Templates for all 13+ services including network policies
++- `values.yaml` contains all configurable parameters
++- `values.schema.json` validates Helm values
++
++## When Making Changes
++
++1. **Add SPDX license headers** to every new file
++2. **Pin dependency versions exactly** in requirements.txt
++3. **Use non-root user** (UID 2999) in any new Dockerfile
++4. **Set `read_only: true`** and `no-new-privileges` for new Docker Compose services
++5. **Update `third-party-programs.txt`** if adding new dependencies
++6. **Update `CHANGELOG.md`** for user-visible changes
++7. **Update `docker-compose.yml`** service definitions if adding new containers
++8. **Never commit credentials** — use `.env` variables and Makefile validation
++9. **Test with both Docker Compose and Helm** deployment methods
++10. **Ensure GPU fallback** works (DRI_MOUNT_PATH auto-detection for `/dev/dri` or `/dev/null`)
+diff --git a/.github/instructions/workflows.instructions.md b/.github/instructions/workflows.instructions.md
+new file mode 100644
+index 00000000..6f4fa819
+--- /dev/null
++++ b/.github/instructions/workflows.instructions.md
+@@ -0,0 +1,173 @@
++# GitHub Actions Workflows — Copilot Instructions
++
++applyTo:
++  - ".github/workflows/**"
++
++## Workflow Standards
++
++### Action Pinning
++
++All GitHub Actions **must** be pinned by full commit SHA with a version comment:
++
++```yaml
++uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
++```
++
++Never use tag-only references like `actions/checkout@v4`. Zizmor scanning will flag unpinned actions as HIGH severity findings.
++
++### Credentials & Secrets
++
++- Set `persist-credentials: false` on all `actions/checkout` steps
++- Never log or echo secrets in workflow steps
++- Generate random credentials in CI using `/dev/urandom` and `openssl rand` — never use static test credentials
++- Use `${{ secrets.GITHUB_TOKEN }}` only where required and with minimal scope
++
++### Permissions
++
++Follow the principle of least privilege. Always declare explicit permissions:
++
++```yaml
++permissions:
++  contents: read
++  packages: read
++  pull-requests: read
++  security-events: write   # only if uploading SARIF results
++```
++
++Use `permissions: {}` at the workflow level and override per-job when possible.
++
++### Concurrency
++
++Use concurrency controls to prevent duplicate runs:
++
++```yaml
++concurrency:
++  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
++  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
++```
++
++### Runner
++
++Use `ubuntu-24.04` as the standard runner for all jobs unless a specific OS is required.
++
++### Naming Conventions
++
++- Workflow name: `"[Suite Name Component] Action Type"` (e.g., `"[Industrial Edge Insights Multimodal and Time Series] SDLe Scans"`)
++- Run name: Include actor and event: `"... (by @${{ github.actor }} via ${{ github.event_name }})"` 
++- File naming: `component-name-action.yaml` or `component-name-action.yml`
++
++### Triggers
++
++Standard trigger patterns used in this repository:
++
++```yaml
++# PR workflow — trigger on path changes
++on:
++  pull_request:
++    paths:
++      - 'manufacturing-ai-suite/industrial-edge-insights-multimodal/**'
++  workflow_call:
++  workflow_dispatch:
++
++# Scan workflow — dispatch with scan selection
++on:
++  workflow_dispatch:
++    inputs:
++      target:
++        description: 'Which Scans to run'
++        type: choice
++        options:
++          - all-scans
++          - trivy-fs-scan
++          - trivy-image-scan
++          # ...
++
++# Scheduled test workflow
++on:
++  schedule:
++    - cron: '0 14 * * *'  # 14:00 UTC daily
++  workflow_dispatch:
++```
++
++### Required Scans
++
++Every application must have these security scans configured:
++
++| Scan | Tool | Purpose |
++|------|------|---------|
++| Filesystem scan | Trivy | Scan repo files for vulnerabilities |
++| Image scan | Trivy | Scan built Docker images |
++| Config scan | Trivy | Scan IaC configurations |
++| Dockerfile scan | Trivy | Lint and scan Dockerfiles |
++| Helm scan | Trivy | Scan Helm chart templates |
++| Python static analysis | Bandit | Security-focused Python linting |
++| Code quality | CodeQL | GitHub's semantic code analysis |
++| Python lint | Pylint | Code quality and style |
++| Workflow security | Zizmor | GitHub Actions security analysis |
++| Virus scan | ClamAV or equivalent | Malware detection |
++
++### Docker Build Patterns in CI
++
++When building Docker images in CI:
++
++```yaml
++- name: Building Multimodal Sample App
++  run: |
++    cd ./path/to/app
++    make down
++    # Generate random credentials - NEVER use static values
++    INFLUXDB_USERNAME=$(cat /dev/urandom | tr -dc 'a-zA-Z' | head -c 8)
++    base=$(tr -dc 'a-zA-Z' </dev/urandom | head -c9)
++    digit=$(tr -dc '0-9' </dev/urandom | head -c1)
++    pos=$((RANDOM % 10))
++    INFLUXDB_PASSWORD=${base:0:$pos}${digit}${base:$pos}
++    # Update .env with generated values
++    sed -i "s/INFLUXDB_USERNAME=.*/INFLUXDB_USERNAME=${INFLUXDB_USERNAME}/g" .env
++    make build
++```
++
++### Reusable Workflows
++
++Use `workflow_call` for shared scan/test logic:
++
++```yaml
++# In the calling workflow
++jobs:
++  scans:
++    uses: ./.github/workflows/component-scans.yml
++    with:
++      target: all-scans
++```
++
++### Artifacts
++
++Upload test reports and scan results as artifacts:
++
++```yaml
++- uses: actions/upload-artifact@v4
++  with:
++    name: test-reports
++    path: '*.html'
++    retention-days: 30
++```
++
++## Workflow Types in This Repository
++
++1. **PR Workflows** (`*-pull-request.yml`): Build and deploy validation on pull requests
++2. **Scan Workflows** (`*-scans.yml`): Security scanning (Trivy, Bandit, CodeQL, Pylint, Zizmor)
++3. **Test Workflows** (`*-tests.yml`): Functional tests (Docker Compose and Helm deployments)
++4. **Documentation Workflows** (`documentation-check.yaml`): Docs build validation
++5. **Weekly Packaging** (`*-weekly-package-helm.yaml`): Periodic Helm chart packaging
++6. **Tag Workflows** (`*-weekly-tag.yaml`): Release tagging
++
++## When Creating New Workflows
++
++1. Add the SPDX license header at the top of the file
++2. Pin all actions by commit SHA
++3. Set `persist-credentials: false` on all checkout steps
++4. Declare minimal `permissions` at workflow and job level
++5. Add concurrency control for PR workflows
++6. Include `workflow_dispatch` for manual triggering
++7. Use `continue-on-error: true` only for scans that should not block the pipeline
++8. Clean up Docker resources at the start of jobs to avoid runner disk issues
++9. Update `.github/CODEOWNERS` if adding component-specific workflows
+diff --git a/.github/skills/docker-compose.skill.md b/.github/skills/docker-compose.skill.md
+new file mode 100644
+index 00000000..1e5faebe
+--- /dev/null
++++ b/.github/skills/docker-compose.skill.md
+@@ -0,0 +1,129 @@
++# Docker & Compose Skill — Edge AI Suites
++# Provides guidance on Docker and Docker Compose development patterns.
++
++name: "docker-compose"
++description: >
++  Assist with Docker Compose service definitions, Dockerfile best practices,
++  and container deployment for the Edge AI Suites multimodal application.
++
++instructions: |
++  ## Docker & Compose Skill
++
++  This skill helps with Docker and Docker Compose development for Edge AI Suites.
++
++  ### Dockerfile Conventions
++
++  **Base Image:**
++  ```dockerfile
++  FROM python:3.13-slim
++  ```
++
++  **Non-Root User Setup:**
++  ```dockerfile
++  ARG TIMESERIES_UID
++  ARG TIMESERIES_USER_NAME
++  RUN groupadd $TIMESERIES_USER_NAME -g $TIMESERIES_UID && \
++      useradd -r -u $TIMESERIES_UID -g $TIMESERIES_USER_NAME $TIMESERIES_USER_NAME
++  USER $TIMESERIES_USER_NAME
++  ```
++
++  **Copyleft Source Support:**
++  ```dockerfile
++  ARG COPYLEFT_SOURCES=false
++  RUN if [ "$COPYLEFT_SOURCES" = "true" ]; then \
++        # Download sources for packages with copyleft licenses
++        mkdir -p /python-licenses && cd /python-licenses && \
++        pip3 freeze | cut -d= -f1 | while read pkg; do \
++          meta=$(pip3 show $pkg 2>/dev/null); \
++          lic=$(echo "$meta" | grep -i '^License:' | grep -Ei 'MPL|GPL|General Public License|EPL|Eclipse Public License|CDDL|LGPL'); \
++          if [ ! -z "$lic" ]; then pip3 download --no-binary :all: $pkg || true; fi; \
++        done; \
++      fi
++  ```
++
++  **Health Check:**
++  ```dockerfile
++  HEALTHCHECK --interval=30s --timeout=10s CMD curl -f http://localhost:8080/health || exit 1
++  ```
++
++  ### Docker Compose Service Template
++
++  ```yaml
++  services:
++    ia-new-service:
++      image: ${NEW_SERVICE_IMAGE}:${IMAGE_SUFFIX}
++      container_name: ia-new-service
++      hostname: ia-new-service
++      build:
++        context: ./new-service
++        args:
++          TIMESERIES_UID: ${TIMESERIES_UID}
++          TIMESERIES_USER_NAME: ${TIMESERIES_USER_NAME}
++      read_only: true
++      security_opt:
++        - no-new-privileges:true
++      user: "${TIMESERIES_UID}:${TIMESERIES_UID}"
++      environment:
++        - MQTT_BROKER=ia-mqtt-broker
++        - LOG_LEVEL=${LOG_LEVEL:-INFO}
++      depends_on:
++        ia-mqtt-broker:
++          condition: service_healthy
++      networks:
++        - timeseries_network
++      volumes:
++        - new_service_data:/data:rw
++      restart: unless-stopped
++
++  volumes:
++    new_service_data:
++      driver_opts:
++        type: tmpfs
++        device: tmpfs
++  ```
++
++  ### Key Environment Variables
++
++  | Variable | Default | Description |
++  |----------|---------|-------------|
++  | `COMPOSE_PROJECT_NAME` | timeseriessoftware | Docker Compose project name |
++  | `TIMESERIES_UID` | 2999 | Non-root user ID |
++  | `TIMESERIES_USER_NAME` | timeseries_user | Non-root username |
++  | `IMAGE_SUFFIX` | 2026.1.0 | Docker image tag suffix |
++  | `HOST_IP` | (must be set) | Host machine IPv4 address |
++  | `DRI_MOUNT_PATH` | auto-detected | GPU device path |
++  | `FUSION_MODE` | OR | Fusion logic: AND or OR |
++  | `TOLERANCE_NS` | 50000000 | Timestamp matching tolerance (ns) |
++
++  ### Network Configuration
++
++  All services join `timeseries_network` (bridge driver):
++  ```yaml
++  networks:
++    timeseries_network:
++      driver: bridge
++  ```
++
++  ### Common Troubleshooting
++
++  **Container won't start:**
++  ```bash
++  docker compose logs ia-service-name
++  docker compose ps -a
++  ```
++
++  **MQTT connectivity:**
++  ```bash
++  docker exec ia-mqtt-broker mosquitto_sub -t '#' -v
++  ```
++
++  **InfluxDB data check:**
++  ```bash
++  docker exec ia-influxdb influx -username $USER -password $PASS -database datain -execute "SHOW MEASUREMENTS"
++  ```
++
++  **Rebuild single service:**
++  ```bash
++  docker compose build --no-cache ia-service-name
++  docker compose up -d ia-service-name
++  ```
+diff --git a/.github/skills/helm-charts.skill.md b/.github/skills/helm-charts.skill.md
+new file mode 100644
+index 00000000..55eb4a47
+--- /dev/null
++++ b/.github/skills/helm-charts.skill.md
+@@ -0,0 +1,114 @@
++# Helm Chart Skill — Edge AI Suites
++# Provides guidance on Helm chart development and deployment.
++
++name: "helm-charts"
++description: >
++  Assist with Helm chart development, packaging, and deployment
++  for the Edge AI Suites Kubernetes deployments.
++
++instructions: |
++  ## Helm Chart Skill
++
++  This skill helps with Helm chart development for Edge AI Suites.
++
++  ### Chart Structure
++
++  ```
++  helm/
++  ├── Chart.yaml              # Chart metadata with date-based versioning
++  ├── values.yaml             # Default configuration values
++  ├── values.schema.json      # JSON Schema for values validation
++  ├── README.md               # Deployment instructions
++  └── templates/
++      ├── NOTES.txt            # Post-install instructions
++      ├── broker.yaml          # MQTT broker (Mosquitto)
++      ├── coturn.yaml          # WebRTC TURN server
++      ├── dlstreamer-pipeline-server.yaml
++      ├── fusion-analytics.yaml
++      ├── grafana.yaml         # Visualization
++      ├── influxdb.yaml        # Time-series database
++      ├── mediamtx.yaml        # RTSP/WebRTC server
++      ├── network-policy.yaml  # Network security
++      ├── nginx.yaml           # Reverse proxy
++      ├── provision-configmap.yaml
++      ├── seaweedfs-filer.yaml
++      ├── seaweedfs-master.yaml
++      ├── seaweedfs-s3.yaml    # S3 storage
++      ├── seaweedfs-volume.yaml
++      ├── telegraf.yaml        # Data collection
++      ├── time-series-analytics-microservice.yaml
++      └── weld-data-simulator.yaml
++  ```
++
++  ### Versioning
++
++  Date-based versioning format: `2026.0`, `2026.1.0`
++
++  For weekly builds: `2026.1.0-YYYYMMDD-weekly`
++
++  Update in Chart.yaml:
++  ```yaml
++  version: 2026.1.0
++  appVersion: "2026.1.0"
++  ```
++
++  ### Generating Helm Packages
++
++  ```bash
++  # Generate Helm chart with config files
++  make gen_helm_charts
++
++  # Package and push to registry
++  make push_helm_charts
++  ```
++
++  The `gen_helm_charts` target copies configuration files into the helm directory
++  and updates version strings in Chart.yaml and values.yaml.
++
++  ### Values Schema Validation
++
++  All user-facing values should be validated in `values.schema.json`:
++  ```json
++  {
++    "properties": {
++      "influxdb": {
++        "properties": {
++          "username": {
++            "type": "string",
++            "minLength": 5,
++            "pattern": "^[A-Za-z]+$"
++          },
++          "password": {
++            "type": "string",
++            "minLength": 10,
++            "pattern": "^[A-Za-z0-9]+$"
++          }
++        }
++      }
++    }
++  }
++  ```
++
++  ### Deployment
++
++  ```bash
++  # Install chart
++  helm install multimodal-weld ./helm -f helm/values.yaml
++
++  # Upgrade existing release
++  helm upgrade multimodal-weld ./helm -f helm/values.yaml
++
++  # Validate templates
++  helm template multimodal-weld ./helm -f helm/values.yaml
++
++  # Lint chart
++  helm lint ./helm
++  ```
++
++  ### Security Considerations
++
++  - Use Kubernetes security contexts (non-root, read-only root filesystem)
++  - Configure network policies to restrict inter-pod communication
++  - Use Kubernetes secrets for credentials (not ConfigMaps)
++  - Set resource limits on all containers
++  - Use image pull policies appropriate for the environment
+diff --git a/.github/skills/license-compliance.skill.md b/.github/skills/license-compliance.skill.md
+new file mode 100644
+index 00000000..60cf3c13
+--- /dev/null
++++ b/.github/skills/license-compliance.skill.md
+@@ -0,0 +1,119 @@
++# License Compliance Skill — Edge AI Suites
++# Provides guidance on license headers, third-party tracking, and compliance.
++
++name: "license-compliance"
++description: >
++  Ensure license compliance for the Edge AI Suites project including
++  Apache 2.0 headers, third-party license tracking, copyleft source
++  handling, and Developer Certificate of Origin (DCO) requirements.
++
++instructions: |
++  ## License Compliance Skill
++
++  This skill ensures all contributions meet Intel's licensing and compliance requirements.
++
++  ### Apache 2.0 License Headers
++
++  **Python files:**
++  ```python
++  #
++  # Apache v2 license
++  # Copyright (C) 2025 Intel Corporation
++  # SPDX-License-Identifier: Apache-2.0
++  #
++  ```
++
++  **YAML / workflow files:**
++  ```yaml
++  # SPDX-FileCopyrightText: (C) 2025 Intel Corporation
++  # SPDX-License-Identifier: Apache-2.0
++  ```
++
++  **Dockerfile / Makefile / Shell scripts:**
++  ```dockerfile
++  #
++  # Apache v2 license
++  # Copyright (C) 2025 Intel Corporation
++  # SPDX-License-Identifier: Apache-2.0
++  #
++  ```
++
++  ### Third-Party License Tracking
++
++  All third-party dependencies must be documented in `third-party-programs.txt`:
++
++  **Docker images format:**
++  ```
++  Docker Image: <image:tag>
++  License: <license-type>
++  URL: <source-url>
++  ```
++
++  **Python packages format:**
++  ```
++  Package: <name>==<version>
++  License: <license-type>
++  ```
++
++  ### Compatible Licenses
++
++  The following licenses are compatible with Apache 2.0:
++  - MIT
++  - BSD (2-clause, 3-clause)
++  - Apache 2.0
++  - ISC
++  - PSF (Python Software Foundation)
++  - HPND (Historical Permission Notice and Disclaimer)
++  - Unlicense
++
++  ### Requires Review
++
++  These licenses require additional review before inclusion:
++  - EPL (Eclipse Public License) — May be compatible depending on usage
++  - MPL (Mozilla Public License) — File-level copyleft, generally compatible
++  - LGPL — Dynamic linking usually acceptable, static requires source sharing
++
++  ### Incompatible Licenses
++
++  These licenses are **NOT compatible** with Apache 2.0 for derived works:
++  - GPL v2/v3 (unless the entire project relicenses)
++  - AGPL
++  - SSPL
++  - Creative Commons NonCommercial/NoDerivatives
++
++  Note: AGPLv3 dependencies (e.g., Grafana) are acceptable when used as
++  separate services (not compiled/linked into Apache 2.0 code). The project
++  does include Grafana (AGPLv3) as a standalone service container.
++
++  ### Copyleft Source Download
++
++  For copyleft-licensed dependencies, Dockerfiles support building with source:
++  ```bash
++  make build_copyleft_sources   # Builds with COPYLEFT_SOURCES=true
++  ```
++
++  This downloads source code for packages with MPL, GPL, LGPL, EPL, or CDDL licenses.
++
++  ### Developer Certificate of Origin (DCO)
++
++  All commits must be signed off:
++  ```
++  Signed-off-by: Your Name <your.name@email.com>
++  ```
++
++  Use: `git commit -s` to auto-sign.
++
++  ### PR Checklist (from template)
++
++  - [ ] I agree to use the APACHE-2.0 license for my code changes
++  - [ ] I have not introduced any 3rd party components incompatible with APACHE-2.0
++  - [ ] I have not included any company confidential information, trade secret, password or security token
++  - [ ] I have performed a self-review of my code
++
++  ### When Adding New Dependencies
++
++  1. Check the dependency license compatibility
++  2. Add entry to `third-party-programs.txt`
++  3. Pin the exact version in requirements.txt
++  4. If copyleft, ensure Dockerfile COPYLEFT_SOURCES block handles it
++  5. Document in the PR under "Any Newly Introduced Dependencies"
+diff --git a/.github/skills/security-scanning.skill.md b/.github/skills/security-scanning.skill.md
+new file mode 100644
+index 00000000..6bd97eba
+--- /dev/null
++++ b/.github/skills/security-scanning.skill.md
+@@ -0,0 +1,100 @@
++# Security Scanning Skill — Edge AI Suites
++# Provides guidance on running and interpreting security scans.
++
++name: "security-scanning"
++description: >
++  Run and interpret security scans for Edge AI Suite applications including
++  Trivy, Bandit, CodeQL, Pylint, and Zizmor.
++
++instructions: |
++  ## Security Scanning Skill
++
++  This skill helps run and interpret security scans for the Edge AI Suites project.
++
++  ### Trivy Scans
++
++  **Filesystem Scan** — Scans the repository source code for vulnerabilities:
++  ```bash
++  trivy fs --severity HIGH,CRITICAL --format table <path>
++  ```
++
++  **Docker Image Scan** — Scans built container images:
++  ```bash
++  trivy image --severity HIGH,CRITICAL --format table <image:tag>
++  ```
++
++  **Dockerfile Scan** — Lints and scans Dockerfiles for misconfigurations:
++  ```bash
++  trivy config --file-patterns "Dockerfile" --severity HIGH,CRITICAL <path>
++  ```
++
++  **Helm Chart Scan** — Scans Helm chart templates:
++  ```bash
++  trivy config --severity HIGH,CRITICAL <helm-chart-path>
++  ```
++
++  **Configuration Scan** — Scans IaC configuration files:
++  ```bash
++  trivy config --severity HIGH,CRITICAL <path>
++  ```
++
++  ### Bandit (Python Static Security Analysis)
++
++  ```bash
++  bandit -r <python-source-path> -f json -o bandit-report.json
++  ```
++
++  Common findings to address:
++  - B101: Use of assert (remove from production code)
++  - B105/B106/B107: Hardcoded passwords
++  - B108: Insecure temporary file/directory
++  - B301: pickle usage
++  - B608: SQL injection
++  - B602: subprocess with shell=True
++
++  ### CodeQL
++
++  CodeQL analysis runs in CI via GitHub's built-in integration. To set up:
++  ```yaml
++  - uses: github/codeql-action/init@v3
++    with:
++      languages: python
++  - uses: github/codeql-action/analyze@v3
++  ```
++
++  ### Pylint (Python Code Quality)
++
++  ```bash
++  pylint --output-format=json <python-files> > pylint-report.json
++  ```
++
++  ### Zizmor (GitHub Actions Security)
++
++  Zizmor scans workflow files for security issues:
++  - Unpinned actions (use commit SHA instead of tags)
++  - Missing `persist-credentials: false`
++  - Overly broad permissions
++  - Script injection via untrusted inputs
++
++  ### Interpreting Results
++
++  **Severity Levels:**
++  - CRITICAL: Must fix before merge
++  - HIGH: Must fix before merge (for PR scans)
++  - MEDIUM: Should fix; create a follow-up issue if deferred
++  - LOW: Best effort; informational on scheduled scans
++
++  ### Key Docker Images to Scan
++
++  For the multimodal application:
++  - `intel/ia-time-series-analytics-microservice:<tag>`
++  - `intel/ia-weld-data-simulator:<tag>`
++  - `intel/ia-multimodal-fusion-analytics:<tag>`
++  - `intel/dlstreamer-pipeline-server:2026.0.0-ubuntu24`
++  - `grafana/grafana-oss:12.4.0-ubuntu`
++  - `influxdb:1.12.2`
++  - `eclipse-mosquitto:2.0.22`
++  - `nginx:1.29.5-trixie-perl`
++  - `chrislusf/seaweedfs:4.15`
++  - `coturn/coturn:4.9.0`
++  - `bluenviron/mediamtx:1.16.3`
+diff --git a/.github/skills/testing.skill.md b/.github/skills/testing.skill.md
+new file mode 100644
+index 00000000..1497c069
+--- /dev/null
++++ b/.github/skills/testing.skill.md
+@@ -0,0 +1,137 @@
++# Testing Skill — Edge AI Suites
++# Provides guidance on writing and running functional tests.
++
++name: "testing"
++description: >
++  Assist with writing pytest-based functional tests for Docker Compose
++  and Helm deployments of Edge AI Suite applications.
++
++instructions: |
++  ## Testing Skill
++
++  This skill helps write and run functional tests for Edge AI Suites.
++
++  ### Test Framework
++
++  - **Framework**: pytest with pytest-html for HTML reports
++  - **Browser testing**: Playwright for Grafana dashboard validation
++  - **MQTT testing**: paho-mqtt client for broker connectivity
++  - **InfluxDB testing**: influxdb-client for data validation
++  - **HTTP testing**: requests and aiohttp for API endpoints
++
++  ### Test Structure
++
++  ```
++  tests/
++  ├── requirements.txt                        # Test dependencies
++  ├── README.md                               # Test instructions
++  └── functional/
++      ├── pytest.ini                           # pytest configuration
++      ├── test_docker_deployment_multimodal.py # Docker Compose tests
++      └── test_helm_deployment_multimodal.py   # Helm deployment tests
++  ```
++
++  ### Running Tests
++
++  ```bash
++  cd manufacturing-ai-suite/industrial-edge-insights-multimodal/tests
++  python -m venv .venv
++  source .venv/bin/activate
++  pip install -r requirements.txt
++
++  # Docker Compose deployment tests
++  pytest -v -s --html=docker_multimodal_report.html functional/test_docker_deployment_multimodal.py
++
++  # Helm deployment tests
++  pytest -v -s --html=helm_multimodal_report.html functional/test_helm_deployment_multimodal.py
++  ```
++
++  ### Writing Tests
++
++  **Test naming**: `test_<deployment_type>_<what_is_tested>`
++
++  **Example test structure**:
++  ```python
++  #
++  # Apache v2 license
++  # Copyright (C) 2025 Intel Corporation
++  # SPDX-License-Identifier: Apache-2.0
++  #
++
++  import pytest
++  import subprocess
++  import time
++  import paho.mqtt.client as mqtt
++
++  class TestDockerDeploymentMultimodal:
++      """Functional tests for Docker Compose multimodal deployment."""
++
++      @pytest.fixture(autouse=True)
++      def setup(self):
++          """Setup: ensure deployment is running."""
++          # Verify all expected containers are healthy
++          pass
++
++      def test_containers_running(self):
++          """Verify all 13+ containers are running."""
++          result = subprocess.run(
++              ["docker", "ps", "--format", "{{.Names}}"],
++              capture_output=True, text=True
++          )
++          expected = ["ia-telegraf", "ia-influxdb", "ia-mqtt-broker",
++                       "ia-grafana", "ia-fusion-analytics", "nginx"]
++          for name in expected:
++              assert name in result.stdout
++
++      def test_mqtt_broker_connectivity(self):
++          """Verify MQTT broker accepts connections."""
++          client = mqtt.Client()
++          client.connect("localhost", 1883, 60)
++          client.disconnect()
++
++      def test_influxdb_data_ingestion(self):
++          """Verify data flows into InfluxDB."""
++          # Query InfluxDB for expected measurements
++          pass
++
++      def test_grafana_dashboard(self):
++          """Verify Grafana dashboard is accessible via nginx proxy."""
++          import requests
++          resp = requests.get("https://localhost:15443", verify=False)
++          assert resp.status_code == 200
++
++      def test_fusion_mode_or(self):
++          """Verify OR fusion mode triggers on single source anomaly."""
++          pass
++
++      def test_s3_storage(self):
++          """Verify SeaweedFS S3 bucket is created and accessible."""
++          pass
++  ```
++
++  ### Test Dependencies (tests/requirements.txt)
++
++  ```
++  pytest==9.0.2
++  pytest-html==4.2.0
++  pytest-env==1.6.0
++  requests==2.33.0
++  playwright==1.58.0
++  aiohttp==3.13.3
++  paho-mqtt==2.1.0
++  influxdb-client==1.50.0
++  ruamel.yaml==0.19.1
++  PyYAML==6.0.3
++  pandas==2.2.3
++  ```
++
++  ### Best Practices
++
++  - Tests must be independent and idempotent
++  - Use generous timeouts for container startup (30-60 seconds)
++  - Clean up resources in teardown fixtures
++  - Test both positive and negative scenarios
++  - Include tests for credential validation (invalid passwords should fail)
++  - Generate HTML reports with `--html` flag
++  - Use `pytest.mark.parametrize` for testing multiple configurations
++  - Mark long-running tests (1+ hour) with `@pytest.mark.slow`
+-- 
+2.53.0
+
+
+From 5b07181c75aeb3cc80e8c373a6ecc202d2e21733 Mon Sep 17 00:00:00 2001
+From: "copilot-swe-agent[bot]" <198982749+Copilot@users.noreply.github.com>
+Date: Mon, 20 Apr 2026 08:04:53 +0000
+Subject: [PATCH 2/2] Pin upload-artifact action by SHA in workflow
+ instructions example
+
+Agent-Logs-Url: https://github.com/vkb1/edge-ai-suites/sessions/62ceea6c-79e9-4eeb-9174-1f04143939f3
+
+Co-authored-by: vkb1 <19564820+vkb1@users.noreply.github.com>
+---
+ .github/instructions/workflows.instructions.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/.github/instructions/workflows.instructions.md b/.github/instructions/workflows.instructions.md
+index 6f4fa819..8c5ff229 100644
+--- a/.github/instructions/workflows.instructions.md
++++ b/.github/instructions/workflows.instructions.md
+@@ -144,7 +144,7 @@ jobs:
+ Upload test reports and scan results as artifacts:
+ 
+ ```yaml
+-- uses: actions/upload-artifact@v4
++- uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+   with:
+     name: test-reports
+     path: '*.html'
+-- 
+2.53.0
+
