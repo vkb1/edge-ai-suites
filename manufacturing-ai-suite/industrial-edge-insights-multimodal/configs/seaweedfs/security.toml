@@ -10,13 +10,13 @@
 values = "https://localhost:3000,https://localhost:30001"
 
 [jwt.signing]
-expires_after_seconds = 10
+expires_after_seconds = 300
 
 [jwt.signing.read]
-expires_after_seconds = 10
+expires_after_seconds = 300
 
 [jwt.filer_signing]
-expires_after_seconds = 10
+expires_after_seconds = 300
 
 [jwt.filer_signing.read]
-expires_after_seconds = 10
+expires_after_seconds = 300

@@ -121,12 +121,11 @@ data:
 {{ .Files.Get "seaweedfs_s3_config.json.template" | indent 4 }}
 ---
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
   namespace: {{ .Values.namespace }}
   name: seaweedfs-security-config
-type: Opaque
-stringData:
+data:
   security.toml: |-
 {{ .Files.Get "security.toml" | indent 4 }}
 ---

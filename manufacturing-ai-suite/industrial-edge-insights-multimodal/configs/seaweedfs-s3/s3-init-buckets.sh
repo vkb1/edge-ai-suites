@@ -48,8 +48,14 @@ run_weed_shell() {
 
 # Split the comma-separated bucket list without changing positional arguments.
 printf '%s\n' "$DEFAULT_BUCKETS" | tr ',' '\n' | while IFS= read -r bucket; do
-    bucket=$(echo "$bucket" | tr -d '[:space:]')
+    bucket=$(printf '%s' "$bucket" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     [ -n "$bucket" ] || continue
+    case "$bucket" in
+        *[[:space:]]*)
+            echo "✗ Bucket name '$bucket' is invalid: whitespace is not allowed"
+            exit 1
+            ;;
+    esac
 
     echo "Creating bucket: $bucket"
 

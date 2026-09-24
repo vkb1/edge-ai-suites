@@ -104,7 +104,7 @@ spec:
           name: seaweedfs-s3-init
           defaultMode: 0755
       - name: seaweedfs-security-config
-        secret:
+        configMap:
           name: seaweedfs-security-config
       - name: tmp-volume
         emptyDir: {}
