@@ -7,7 +7,7 @@
 #   WEED_JWT_FILER_SIGNING_KEY / WEED_JWT_FILER_SIGNING_READ_KEY
 
 [cors.allowed_origins]
-values = "*"
+values = "https://localhost:3000,https://localhost:30001"
 
 [jwt.signing]
 expires_after_seconds = 10

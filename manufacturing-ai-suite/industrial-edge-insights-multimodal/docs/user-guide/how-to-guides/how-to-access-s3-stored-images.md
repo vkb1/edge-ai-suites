@@ -47,6 +47,11 @@ Use an S3-compatible client with the `S3_STORAGE_USERNAME` and `S3_STORAGE_PASSW
 from `.env` or `values.yaml` to access stored images through the authenticated `seaweedfs-s3`
 gateway instead.
 
+- **Docker Compose:** connect from a container on `timeseries_network` to `http://seaweedfs-s3:8333`.
+- **Helm:** connect in-cluster to `http://seaweedfs-s3:8333`, or use
+  `kubectl port-forward svc/seaweedfs-s3 8333:8333 -n <namespace>` and point your S3 client to
+  `http://127.0.0.1:8333`.
+
 ## Mapping Vision Metadata to Stored Images
 
 Follow these steps to correlate detection events in InfluxDB with stored images:
