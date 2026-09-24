@@ -86,5 +86,5 @@ spec:
       - name: vol-seaweed-filer-data
         emptyDir: {}
       - name: seaweedfs-security-config
-        configMap:
+        secret:
           name: seaweedfs-security-config

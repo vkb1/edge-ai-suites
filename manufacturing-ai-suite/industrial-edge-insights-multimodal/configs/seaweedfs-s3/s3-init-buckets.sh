@@ -43,7 +43,7 @@ DEFAULT_BUCKETS="${DEFAULT_S3_BUCKETS:-dlstreamer-pipeline-results}"
 DEFAULT_S3_BUCKET_TTL="${S3_BUCKET_TTL:-30m}"
 
 run_weed_shell() {
-    printf '%s\n' "$1" | weed shell -master="$WEED_MASTER_ADDRESS" -filer="$WEED_FILER_ADDRESS"
+    printf '%s\n' "$1" | weed -config_dir=/etc/seaweedfs shell -master="$WEED_MASTER_ADDRESS" -filer="$WEED_FILER_ADDRESS"
 }
 
 # Split the comma-separated bucket list without changing positional arguments.
@@ -56,9 +56,12 @@ printf '%s\n' "$DEFAULT_BUCKETS" | tr ',' '\n' | while IFS= read -r bucket; do
     CREATE_BUCKET_CMD="s3.bucket.create -name=$bucket"
     if CREATE_BUCKET_OUTPUT=$(run_weed_shell "$CREATE_BUCKET_CMD" 2>&1); then
         echo "✓ Bucket '$bucket' created successfully"
+    elif printf '%s' "$CREATE_BUCKET_OUTPUT" | grep -qi "already exists"; then
+        echo "ℹ Bucket '$bucket' already exists"
     else
-        echo "ℹ Bucket '$bucket' may already exist or be already created"
+        echo "✗ Failed to create bucket '$bucket'"
         echo "$CREATE_BUCKET_OUTPUT"
+        exit 1
     fi
 
     if [ -n "$DEFAULT_S3_BUCKET_TTL" ]; then
