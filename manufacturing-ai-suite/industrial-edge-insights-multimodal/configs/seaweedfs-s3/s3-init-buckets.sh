@@ -6,6 +6,11 @@
 #
 # Script to generate S3 config and create default buckets in SeaweedFS before starting S3 service
 
+set -eu
+
+WEED_MASTER_ADDRESS="${WEED_MASTER_ADDRESS:-seaweedfs-master:9333}"
+WEED_FILER_ADDRESS="${WEED_FILER_ADDRESS:-seaweedfs-filer:8888}"
+
 echo "Generating S3 config from template..."
 
 sed -e "s/\${S3_STORAGE_USER}/${S3_STORAGE_USER}/g" \
@@ -19,7 +24,7 @@ RETRY_COUNT=0
 MAX_RETRIES=30
 
 until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
-    if curl -s --connect-timeout 3 --max-time 5 http://seaweedfs-filer:8888/ > /dev/null 2>&1; then
+    if curl -s --connect-timeout 3 --max-time 5 http://seaweedfs-filer:8888/healthz > /dev/null 2>&1; then
         echo "✓ Filer is accessible!"
         break
     fi
@@ -37,16 +42,23 @@ DEFAULT_BUCKETS="${DEFAULT_S3_BUCKETS:-dlstreamer-pipeline-results}"
 # Optional TTL for all default buckets, e.g. 10m, 1h, 7d
 DEFAULT_S3_BUCKET_TTL="${S3_BUCKET_TTL:-30m}"
 
+run_weed_shell() {
+    printf '%s\n' "$1" | weed shell -master="$WEED_MASTER_ADDRESS" -filer="$WEED_FILER_ADDRESS"
+}
+
 # Split the comma-separated bucket list without changing positional arguments.
 printf '%s\n' "$DEFAULT_BUCKETS" | tr ',' '\n' | while IFS= read -r bucket; do
+    bucket=$(echo "$bucket" | tr -d '[:space:]')
+    [ -n "$bucket" ] || continue
+
     echo "Creating bucket: $bucket"
-    
-    RESULT=$(curl -s -w "\n%{http_code}" -X POST "http://seaweedfs-filer:8888/buckets/$bucket/?op=mkdir" 2>&1)
-    HTTP_CODE=$(echo "$RESULT" | tail -n1)
-    if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ]; then
+
+    CREATE_BUCKET_CMD="s3.bucket.create -name=$bucket"
+    if CREATE_BUCKET_OUTPUT=$(run_weed_shell "$CREATE_BUCKET_CMD" 2>&1); then
         echo "✓ Bucket '$bucket' created successfully"
     else
-        echo "ℹ Bucket '$bucket' may already exist or created (HTTP: $HTTP_CODE)"
+        echo "ℹ Bucket '$bucket' may already exist or be already created"
+        echo "$CREATE_BUCKET_OUTPUT"
     fi
 
     if [ -n "$DEFAULT_S3_BUCKET_TTL" ]; then
@@ -54,9 +66,7 @@ printf '%s\n' "$DEFAULT_BUCKETS" | tr ',' '\n' | while IFS= read -r bucket; do
         FS_CONFIG_CMD="fs.configure -locationPrefix=$LOCATION_PREFIX -ttl=$DEFAULT_S3_BUCKET_TTL -apply"
         echo "Applying TTL '$DEFAULT_S3_BUCKET_TTL' to path '$LOCATION_PREFIX'"
 
-        FS_CONFIG_OUTPUT=$(printf '%s\n' "$FS_CONFIG_CMD" | weed shell -master=seaweedfs-master:9333 -filer=seaweedfs-filer:8888 2>&1)
-        FS_CONFIG_STATUS=$?
-        if [ $FS_CONFIG_STATUS -eq 0 ]; then
+        if FS_CONFIG_OUTPUT=$(run_weed_shell "$FS_CONFIG_CMD" 2>&1); then
             echo "✓ TTL configured for bucket '$bucket'"
         else
             echo "⚠ Failed to configure TTL for bucket '$bucket'"

@@ -63,6 +63,9 @@ spec:
         - name: seaweedfs-s3-init
           mountPath: /usr/local/bin/s3-init-buckets.sh
           subPath: s3-init-buckets.sh
+        - name: seaweedfs-security-config
+          mountPath: /etc/seaweedfs/security.toml
+          subPath: security.toml
         - name: tmp-volume
           mountPath: /tmp
         command: ["/usr/local/bin/s3-init-buckets.sh"]
@@ -80,6 +83,18 @@ spec:
           value: {{ .Values.env.S3_STORAGE_PASSWORD }}
         - name: S3_BUCKET_TTL
           value: {{ .Values.env.S3_BUCKET_TTL }}
+        - name: WEED_MASTER_ADDRESS
+          value: {{ .Values.config.seaweedfs_master.name }}:9333
+        - name: WEED_FILER_ADDRESS
+          value: {{ .Values.config.seaweedfs_filer.name }}:8888
+        - name: WEED_JWT_SIGNING_KEY
+          value: {{ .Values.env.SEAWEEDFS_JWT_SIGNING_KEY | quote }}
+        - name: WEED_JWT_SIGNING_READ_KEY
+          value: {{ .Values.env.SEAWEEDFS_JWT_SIGNING_READ_KEY | quote }}
+        - name: WEED_JWT_FILER_SIGNING_KEY
+          value: {{ .Values.env.SEAWEEDFS_FILER_JWT_SIGNING_KEY | quote }}
+        - name: WEED_JWT_FILER_SIGNING_READ_KEY
+          value: {{ .Values.env.SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY | quote }}
       volumes:
       - name: seaweedfs-s3-config-template
         configMap:
@@ -88,5 +103,8 @@ spec:
         configMap:
           name: seaweedfs-s3-init
           defaultMode: 0755
+      - name: seaweedfs-security-config
+        configMap:
+          name: seaweedfs-security-config
       - name: tmp-volume
         emptyDir: {}

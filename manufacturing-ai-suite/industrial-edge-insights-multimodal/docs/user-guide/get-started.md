@@ -78,6 +78,10 @@ cd manufacturing-ai-suite/industrial-edge-insights-multimodal
    - `HOST_IP`
    - `S3_STORAGE_USERNAME`
    - `S3_STORAGE_PASSWORD`
+   - `SEAWEEDFS_JWT_SIGNING_KEY`
+   - `SEAWEEDFS_JWT_SIGNING_READ_KEY`
+   - `SEAWEEDFS_FILER_JWT_SIGNING_KEY`
+   - `SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY`
 
 2. Deploy the sample app, use only one of the following options.
 
