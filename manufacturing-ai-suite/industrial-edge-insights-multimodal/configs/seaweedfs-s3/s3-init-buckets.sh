@@ -46,8 +46,12 @@ run_weed_shell() {
     printf '%s\n' "$1" | weed -config_dir=/etc/seaweedfs shell -master="$WEED_MASTER_ADDRESS" -filer="$WEED_FILER_ADDRESS"
 }
 
-# Split the comma-separated bucket list without changing positional arguments.
-printf '%s\n' "$DEFAULT_BUCKETS" | tr ',' '\n' | while IFS= read -r bucket; do
+OLD_IFS=$IFS
+IFS=,
+set -- $DEFAULT_BUCKETS
+IFS=$OLD_IFS
+
+for bucket in "$@"; do
     bucket=$(printf '%s' "$bucket" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     [ -n "$bucket" ] || continue
     case "$bucket" in

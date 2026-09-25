@@ -69,6 +69,7 @@
         },
         "SEAWEEDFS_ALLOWED_CORS_ORIGINS": {
           "type": "string",
+          "pattern": "^https://[^,\\s]+(,https://[^,\\s]+)*$",
           "description": "Comma-separated HTTPS origins allowed to reach SeaweedFS browser endpoints."
         },
         "SEAWEEDFS_JWT_SIGNING_KEY": {

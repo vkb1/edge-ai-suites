@@ -434,7 +434,7 @@ services:
       - WEED_CORS_ALLOWED_ORIGINS_VALUES=${SEAWEEDFS_ALLOWED_CORS_ORIGINS}
       - WEED_JWT_SIGNING_KEY=${SEAWEEDFS_JWT_SIGNING_KEY}
       - WEED_JWT_SIGNING_READ_KEY=${SEAWEEDFS_JWT_SIGNING_READ_KEY}
-    command: master -ip=seaweedfs-master -ip.bind=0.0.0.0
+    command: -config_dir=/etc/seaweedfs master -ip=seaweedfs-master -ip.bind=0.0.0.0
 
   seaweedfs-volume:
     image: ${SEAWEEDFS_IMAGE}
@@ -457,7 +457,7 @@ services:
       - WEED_CORS_ALLOWED_ORIGINS_VALUES=${SEAWEEDFS_ALLOWED_CORS_ORIGINS}
       - WEED_JWT_SIGNING_KEY=${SEAWEEDFS_JWT_SIGNING_KEY}
       - WEED_JWT_SIGNING_READ_KEY=${SEAWEEDFS_JWT_SIGNING_READ_KEY}
-    command: volume -mserver=seaweedfs-master:9333 -ip.bind=0.0.0.0 -port=8080
+    command: -config_dir=/etc/seaweedfs volume -mserver=seaweedfs-master:9333 -ip.bind=0.0.0.0 -port=8080
     depends_on:
       - seaweedfs-master
 
@@ -483,7 +483,7 @@ services:
       - WEED_JWT_SIGNING_READ_KEY=${SEAWEEDFS_JWT_SIGNING_READ_KEY}
       - WEED_JWT_FILER_SIGNING_KEY=${SEAWEEDFS_FILER_JWT_SIGNING_KEY}
       - WEED_JWT_FILER_SIGNING_READ_KEY=${SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY}
-    command: filer -master=seaweedfs-master:9333 -ip.bind=0.0.0.0
+    command: -config_dir=/etc/seaweedfs filer -master=seaweedfs-master:9333 -ip.bind=0.0.0.0
     depends_on:
       - seaweedfs-master
       - seaweedfs-volume
@@ -523,7 +523,7 @@ services:
       - WEED_JWT_FILER_SIGNING_KEY=${SEAWEEDFS_FILER_JWT_SIGNING_KEY}
       - WEED_JWT_FILER_SIGNING_READ_KEY=${SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY}
     entrypoint: ["/s3-init-buckets.sh"]
-    command: s3 -filer=seaweedfs-filer:8888 -ip.bind=0.0.0.0 -config=/tmp/s3_config.json
+    command: -config_dir=/etc/seaweedfs s3 -filer=seaweedfs-filer:8888 -ip.bind=0.0.0.0 -config=/tmp/s3_config.json
     depends_on:
       seaweedfs-filer:
         condition: service_healthy

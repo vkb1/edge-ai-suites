@@ -69,7 +69,7 @@ spec:
         - name: tmp-volume
           mountPath: /tmp
         command: ["/usr/local/bin/s3-init-buckets.sh"]
-        args: ["s3", "-filer={{ .Values.config.seaweedfs_filer.name }}:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"]
+        args: ["-config_dir=/etc/seaweedfs", "s3", "-filer={{ .Values.config.seaweedfs_filer.name }}:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"]
         env:
         - name: NO_PROXY
           value: "localhost,127.0.0.1,{{ .Values.config.seaweedfs_filer.name }},{{ .Values.config.seaweedfs_volume.name }},{{ .Values.config.seaweedfs_master.name }},{{ .Values.config.seaweedfs_s3.name }},172.18.0.0/16"
