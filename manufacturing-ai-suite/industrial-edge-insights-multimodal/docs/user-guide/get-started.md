@@ -89,6 +89,8 @@ cd manufacturing-ai-suite/industrial-edge-insights-multimodal
    ```
 
    > [!NOTE]
+   > This `configs/nginx/ssl/htpasswd` file is required before you run
+   > `make up`, `make up_agentic`, or `docker compose` for the agentic UI path.
    > The nginx service mounts `./configs/nginx/ssl` into the container at
    > `/etc/nginx/ssl`, so the credentials file is available at
    > `/etc/nginx/ssl/htpasswd`. If you manage credentials as a secret or external
