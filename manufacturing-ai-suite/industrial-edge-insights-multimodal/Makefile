@@ -75,7 +75,7 @@ validate_host_ip:
 .PHONY: check_env_variables
 check_env_variables:
 	@echo "Checking if username/password in .env are matching the rules set..."
-	@variables="INFLUXDB_USERNAME INFLUXDB_PASSWORD VISUALIZER_GRAFANA_USER VISUALIZER_GRAFANA_PASSWORD MTX_WEBRTCICESERVERS2_0_USERNAME MTX_WEBRTCICESERVERS2_0_PASSWORD S3_STORAGE_USERNAME S3_STORAGE_PASSWORD SEAWEEDFS_JWT_SIGNING_KEY SEAWEEDFS_JWT_SIGNING_READ_KEY SEAWEEDFS_FILER_JWT_SIGNING_KEY SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY"; \
+	@variables="INFLUXDB_USERNAME INFLUXDB_PASSWORD VISUALIZER_GRAFANA_USER VISUALIZER_GRAFANA_PASSWORD MTX_WEBRTCICESERVERS2_0_USERNAME MTX_WEBRTCICESERVERS2_0_PASSWORD S3_STORAGE_USERNAME S3_STORAGE_PASSWORD SEAWEEDFS_ALLOWED_CORS_ORIGINS SEAWEEDFS_JWT_SIGNING_KEY SEAWEEDFS_JWT_SIGNING_READ_KEY SEAWEEDFS_FILER_JWT_SIGNING_KEY SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY"; \
 	for variable_name in $$variables; do \
 		value=$$(grep -E "^$$variable_name=" $(ENV_FILE) | cut -d'=' -f2); \
 		if [ -z "$$value" ]; then \
@@ -132,6 +132,12 @@ check_env_variables:
 			S3_STORAGE_PASSWORD) \
 				if ! echo "$$value" | grep -Eq "^[A-Za-z0-9]{10,}$$" || ! echo "$$value" | grep -q "[0-9]" || ! echo "$$value" | grep -q "[A-Za-z]"; then \
 					echo "S3_STORAGE_PASSWORD length must be a minimum of 10 alphanumeric characters with at least one digit"; \
+					exit 1; \
+				fi \
+				;; \
+			SEAWEEDFS_ALLOWED_CORS_ORIGINS) \
+				if ! echo "$$value" | grep -Eq '^https://[^,[:space:]]+(,https://[^,[:space:]]+)*$$'; then \
+					echo "SEAWEEDFS_ALLOWED_CORS_ORIGINS must be a comma-separated list of https:// origins"; \
 					exit 1; \
 				fi \
 				;; \

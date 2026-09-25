@@ -121,29 +121,24 @@ data:
 {{ .Files.Get "seaweedfs_s3_config.json.template" | indent 4 }}
 ---
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
   namespace: {{ .Values.namespace }}
   name: seaweedfs-security-config
-type: Opaque
-stringData:
+data:
   security.toml: |-
     [cors.allowed_origins]
-    values = {{ .Values.env.SEAWEEDFS_ALLOWED_CORS_ORIGINS | quote }}
+    values = ""
 
     [jwt.signing]
-    key = {{ .Values.env.SEAWEEDFS_JWT_SIGNING_KEY | quote }}
     expires_after_seconds = 300
 
     [jwt.signing.read]
-    key = {{ .Values.env.SEAWEEDFS_JWT_SIGNING_READ_KEY | quote }}
     expires_after_seconds = 300
 
     [jwt.filer_signing]
-    key = {{ .Values.env.SEAWEEDFS_FILER_JWT_SIGNING_KEY | quote }}
     expires_after_seconds = 300
 
     [jwt.filer_signing.read]
-    key = {{ .Values.env.SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY | quote }}
     expires_after_seconds = 300
 ---

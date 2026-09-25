@@ -106,3 +106,25 @@ def test_s3_init_script_rejects_invalid_bucket_names(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert "invalid: whitespace is not allowed" in result.stdout
     assert not exec_marker.exists()
+
+
+def test_s3_init_script_uses_default_addresses_when_env_is_unset(tmp_path: Path) -> None:
+    template_path = tmp_path / "s3_config.json.template"
+    template_path.write_text('{"user":"${S3_STORAGE_USER}","pass":"${S3_STORAGE_PASS}"}', encoding="utf-8")
+    script_copy = _prepare_script(tmp_path, template_path)
+    log_path, exec_marker = _prepare_fake_bins(tmp_path)
+    env = _base_env(tmp_path / "bin", template_path)
+    env.pop("WEED_MASTER_ADDRESS")
+    env.pop("WEED_FILER_ADDRESS")
+
+    subprocess.run(
+        [str(script_copy), "-config_dir=/etc/seaweedfs", "s3", "-filer=seaweedfs-filer:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"],
+        check=True,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    weed_log = log_path.read_text(encoding="utf-8")
+    assert "-config_dir=/etc/seaweedfs shell -master=seaweedfs-master:9333 -filer=seaweedfs-filer:8888" in weed_log
+    assert exec_marker.exists()

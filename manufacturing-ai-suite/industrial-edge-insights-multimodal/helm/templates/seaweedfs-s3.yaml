@@ -87,6 +87,16 @@ spec:
           value: {{ .Values.config.seaweedfs_master.name }}:9333
         - name: WEED_FILER_ADDRESS
           value: {{ .Values.config.seaweedfs_filer.name }}:8888
+        - name: WEED_CORS_ALLOWED_ORIGINS_VALUES
+          value: {{ .Values.env.SEAWEEDFS_ALLOWED_CORS_ORIGINS | quote }}
+        - name: WEED_JWT_SIGNING_KEY
+          value: {{ .Values.env.SEAWEEDFS_JWT_SIGNING_KEY | quote }}
+        - name: WEED_JWT_SIGNING_READ_KEY
+          value: {{ .Values.env.SEAWEEDFS_JWT_SIGNING_READ_KEY | quote }}
+        - name: WEED_JWT_FILER_SIGNING_KEY
+          value: {{ .Values.env.SEAWEEDFS_FILER_JWT_SIGNING_KEY | quote }}
+        - name: WEED_JWT_FILER_SIGNING_READ_KEY
+          value: {{ .Values.env.SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY | quote }}
       volumes:
       - name: seaweedfs-s3-config-template
         configMap:
@@ -96,7 +106,7 @@ spec:
           name: seaweedfs-s3-init
           defaultMode: 0755
       - name: seaweedfs-security-config
-        secret:
+        configMap:
           name: seaweedfs-security-config
       - name: tmp-volume
         emptyDir: {}
