@@ -4,12 +4,6 @@
   "properties": {
     "env": {
       "type": "object",
-      "required": [
-        "SEAWEEDFS_JWT_SIGNING_KEY",
-        "SEAWEEDFS_JWT_SIGNING_READ_KEY",
-        "SEAWEEDFS_FILER_JWT_SIGNING_KEY",
-        "SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY"
-      ],
       "properties": {
         "INFLUXDB_USERNAME": {
           "type": "string",
@@ -80,37 +74,57 @@
         },
         "SEAWEEDFS_JWT_SIGNING_KEY": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9]{16,}$",
-          "allOf": [
-            { "pattern": ".*[0-9].*" },
-            { "pattern": ".*[A-Za-z].*" }
+          "anyOf": [
+            { "const": "" },
+            {
+              "allOf": [
+                { "pattern": "^[A-Za-z0-9]{16,}$" },
+                { "pattern": ".*[0-9].*" },
+                { "pattern": ".*[A-Za-z].*" }
+              ]
+            }
           ],
           "description": "At least 16 alphanumeric, at least one digit."
         },
         "SEAWEEDFS_JWT_SIGNING_READ_KEY": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9]{16,}$",
-          "allOf": [
-            { "pattern": ".*[0-9].*" },
-            { "pattern": ".*[A-Za-z].*" }
+          "anyOf": [
+            { "const": "" },
+            {
+              "allOf": [
+                { "pattern": "^[A-Za-z0-9]{16,}$" },
+                { "pattern": ".*[0-9].*" },
+                { "pattern": ".*[A-Za-z].*" }
+              ]
+            }
           ],
           "description": "At least 16 alphanumeric, at least one digit."
         },
         "SEAWEEDFS_FILER_JWT_SIGNING_KEY": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9]{16,}$",
-          "allOf": [
-            { "pattern": ".*[0-9].*" },
-            { "pattern": ".*[A-Za-z].*" }
+          "anyOf": [
+            { "const": "" },
+            {
+              "allOf": [
+                { "pattern": "^[A-Za-z0-9]{16,}$" },
+                { "pattern": ".*[0-9].*" },
+                { "pattern": ".*[A-Za-z].*" }
+              ]
+            }
           ],
           "description": "At least 16 alphanumeric, at least one digit."
         },
         "SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9]{16,}$",
-          "allOf": [
-            { "pattern": ".*[0-9].*" },
-            { "pattern": ".*[A-Za-z].*" }
+          "anyOf": [
+            { "const": "" },
+            {
+              "allOf": [
+                { "pattern": "^[A-Za-z0-9]{16,}$" },
+                { "pattern": ".*[0-9].*" },
+                { "pattern": ".*[A-Za-z].*" }
+              ]
+            }
           ],
           "description": "At least 16 alphanumeric, at least one digit."
         }
