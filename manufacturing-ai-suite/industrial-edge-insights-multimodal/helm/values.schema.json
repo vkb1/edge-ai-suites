@@ -4,6 +4,12 @@
   "properties": {
     "env": {
       "type": "object",
+      "required": [
+        "SEAWEEDFS_JWT_SIGNING_KEY",
+        "SEAWEEDFS_JWT_SIGNING_READ_KEY",
+        "SEAWEEDFS_FILER_JWT_SIGNING_KEY",
+        "SEAWEEDFS_FILER_JWT_SIGNING_READ_KEY"
+      ],
       "properties": {
         "INFLUXDB_USERNAME": {
           "type": "string",
