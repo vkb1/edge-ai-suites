@@ -84,9 +84,9 @@ spec:
         - name: S3_BUCKET_TTL
           value: {{ .Values.env.S3_BUCKET_TTL }}
         - name: WEED_MASTER_ADDRESS
-          value: {{ .Values.config.seaweedfs_master.name }}:9333
+          value: {{ printf "%s:9333" .Values.config.seaweedfs_master.name | quote }}
         - name: WEED_FILER_ADDRESS
-          value: {{ .Values.config.seaweedfs_filer.name }}:8888
+          value: {{ printf "%s:8888" .Values.config.seaweedfs_filer.name | quote }}
         - name: WEED_CORS_ALLOWED_ORIGINS_VALUES
           value: {{ .Values.env.SEAWEEDFS_ALLOWED_CORS_ORIGINS | quote }}
         - name: WEED_JWT_SIGNING_KEY

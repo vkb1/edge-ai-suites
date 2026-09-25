@@ -127,18 +127,5 @@ metadata:
   name: seaweedfs-security-config
 data:
   security.toml: |-
-    [cors.allowed_origins]
-    values = ""
-
-    [jwt.signing]
-    expires_after_seconds = 300
-
-    [jwt.signing.read]
-    expires_after_seconds = 300
-
-    [jwt.filer_signing]
-    expires_after_seconds = 300
-
-    [jwt.filer_signing.read]
-    expires_after_seconds = 300
+{{ .Files.Get "security.toml" | indent 4 }}
 ---
