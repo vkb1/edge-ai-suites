@@ -8,14 +8,23 @@
 
 set -eu
 
+WEED_CONFIG_DIR="/etc/seaweedfs"
 WEED_MASTER_ADDRESS="${WEED_MASTER_ADDRESS:-seaweedfs-master:9333}"
 WEED_FILER_ADDRESS="${WEED_FILER_ADDRESS:-seaweedfs-filer:8888}"
+
+for arg in "$@"; do
+    case "$arg" in
+        -config_dir=*)
+            WEED_CONFIG_DIR="${arg#-config_dir=}"
+            ;;
+    esac
+done
 
 echo "Generating S3 config from template..."
 
 sed -e "s/\${S3_STORAGE_USER}/${S3_STORAGE_USER}/g" \
     -e "s/\${S3_STORAGE_PASS}/${S3_STORAGE_PASS}/g" \
-    /etc/seaweedfs/s3_config.json.template > /tmp/s3_config.json
+    "${WEED_CONFIG_DIR}/s3_config.json.template" > /tmp/s3_config.json
 echo "S3 config generated with user: ${S3_STORAGE_USER}"
 
 # Wait and check if filer is accessible
@@ -44,7 +53,7 @@ DEFAULT_BUCKETS="${DEFAULT_S3_BUCKETS:-dlstreamer-pipeline-results}"
 DEFAULT_S3_BUCKET_TTL="${S3_BUCKET_TTL:-30m}"
 
 run_weed_shell() {
-    printf '%s\n' "$1" | weed -config_dir=/etc/seaweedfs shell -master="$WEED_MASTER_ADDRESS" -filer="$WEED_FILER_ADDRESS"
+    printf '%s\n' "$1" | weed "-config_dir=${WEED_CONFIG_DIR}" shell -master="$WEED_MASTER_ADDRESS" -filer="$WEED_FILER_ADDRESS"
 }
 
 OLD_IFS=$IFS

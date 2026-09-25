@@ -12,14 +12,9 @@ def _write_executable(path: Path, content: str) -> None:
     path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
 
-def _prepare_script(tmp_path: Path, template_path: Path) -> Path:
+def _prepare_script(tmp_path: Path) -> Path:
     script_copy = tmp_path / "s3-init-buckets.sh"
-    script_copy.write_text(
-        SCRIPT_PATH.read_text(encoding="utf-8").replace(
-            "/etc/seaweedfs/s3_config.json.template", str(template_path)
-        ),
-        encoding="utf-8",
-    )
+    script_copy.write_text(SCRIPT_PATH.read_text(encoding="utf-8"), encoding="utf-8")
     script_copy.chmod(script_copy.stat().st_mode | stat.S_IXUSR)
     return script_copy
 
@@ -38,10 +33,12 @@ def _prepare_fake_bins(tmp_path: Path) -> tuple[Path, Path]:
         bin_dir / "weed",
         "#!/bin/sh\n"
         f'printf "%s\\n" "$*" >> "{log_path}"\n'
-        'if [ "$1" = "-config_dir=/etc/seaweedfs" ] && [ "$2" = "shell" ]; then\n'
+        'case "$1 $2" in\n'
+        '  -config_dir=*\\ shell)\n'
         "  cat >> \"" + str(log_path) + "\"\n"
         "  exit 0\n"
-        "fi\n"
+        "  ;;\n"
+        "esac\n"
         f'printf "%s\\n" "$*" > "{exec_marker}"\n'
         "exit 0\n",
     )
@@ -66,14 +63,16 @@ def _base_env(bin_dir: Path, template_path: Path) -> dict[str, str]:
 
 
 def test_s3_init_script_uses_authenticated_weed_shell(tmp_path: Path) -> None:
-    template_path = tmp_path / "s3_config.json.template"
+    config_dir = tmp_path / "seaweedfs-config"
+    config_dir.mkdir()
+    template_path = config_dir / "s3_config.json.template"
     template_path.write_text('{"user":"${S3_STORAGE_USER}","pass":"${S3_STORAGE_PASS}"}', encoding="utf-8")
-    script_copy = _prepare_script(tmp_path, template_path)
+    script_copy = _prepare_script(tmp_path)
     log_path, exec_marker = _prepare_fake_bins(tmp_path)
     env = _base_env(tmp_path / "bin", template_path)
 
     subprocess.run(
-        [str(script_copy), "-config_dir=/etc/seaweedfs", "s3", "-filer=seaweedfs-filer:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"],
+        [str(script_copy), f"-config_dir={config_dir}", "s3", "-filer=seaweedfs-filer:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"],
         check=True,
         env=env,
         capture_output=True,
@@ -81,22 +80,24 @@ def test_s3_init_script_uses_authenticated_weed_shell(tmp_path: Path) -> None:
     )
 
     weed_log = log_path.read_text(encoding="utf-8")
-    assert "-config_dir=/etc/seaweedfs shell -master=seaweedfs-master:9333 -filer=seaweedfs-filer:8888" in weed_log
+    assert f"-config_dir={config_dir} shell -master=seaweedfs-master:9333 -filer=seaweedfs-filer:8888" in weed_log
     assert "s3.bucket.create -name=bucket-one" in weed_log
     assert "fs.configure -locationPrefix=/buckets/bucket-one/ -ttl=30m -apply" in weed_log
     assert exec_marker.exists()
 
 
 def test_s3_init_script_rejects_invalid_bucket_names(tmp_path: Path) -> None:
-    template_path = tmp_path / "s3_config.json.template"
+    config_dir = tmp_path / "seaweedfs-config"
+    config_dir.mkdir()
+    template_path = config_dir / "s3_config.json.template"
     template_path.write_text('{"user":"${S3_STORAGE_USER}","pass":"${S3_STORAGE_PASS}"}', encoding="utf-8")
-    script_copy = _prepare_script(tmp_path, template_path)
+    script_copy = _prepare_script(tmp_path)
     _log_path, exec_marker = _prepare_fake_bins(tmp_path)
     env = _base_env(tmp_path / "bin", template_path)
     env["DEFAULT_S3_BUCKETS"] = "invalid bucket"
 
     result = subprocess.run(
-        [str(script_copy), "-config_dir=/etc/seaweedfs", "s3", "-filer=seaweedfs-filer:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"],
+        [str(script_copy), f"-config_dir={config_dir}", "s3", "-filer=seaweedfs-filer:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"],
         check=False,
         env=env,
         capture_output=True,
@@ -109,16 +110,18 @@ def test_s3_init_script_rejects_invalid_bucket_names(tmp_path: Path) -> None:
 
 
 def test_s3_init_script_uses_default_addresses_when_env_is_unset(tmp_path: Path) -> None:
-    template_path = tmp_path / "s3_config.json.template"
+    config_dir = tmp_path / "seaweedfs-config"
+    config_dir.mkdir()
+    template_path = config_dir / "s3_config.json.template"
     template_path.write_text('{"user":"${S3_STORAGE_USER}","pass":"${S3_STORAGE_PASS}"}', encoding="utf-8")
-    script_copy = _prepare_script(tmp_path, template_path)
+    script_copy = _prepare_script(tmp_path)
     log_path, exec_marker = _prepare_fake_bins(tmp_path)
     env = _base_env(tmp_path / "bin", template_path)
     env.pop("WEED_MASTER_ADDRESS")
     env.pop("WEED_FILER_ADDRESS")
 
     subprocess.run(
-        [str(script_copy), "-config_dir=/etc/seaweedfs", "s3", "-filer=seaweedfs-filer:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"],
+        [str(script_copy), f"-config_dir={config_dir}", "s3", "-filer=seaweedfs-filer:8888", "-ip.bind=0.0.0.0", "-config=/tmp/s3_config.json"],
         check=True,
         env=env,
         capture_output=True,
@@ -126,5 +129,5 @@ def test_s3_init_script_uses_default_addresses_when_env_is_unset(tmp_path: Path)
     )
 
     weed_log = log_path.read_text(encoding="utf-8")
-    assert "-config_dir=/etc/seaweedfs shell -master=seaweedfs-master:9333 -filer=seaweedfs-filer:8888" in weed_log
+    assert f"-config_dir={config_dir} shell -master=seaweedfs-master:9333 -filer=seaweedfs-filer:8888" in weed_log
     assert exec_marker.exists()
