@@ -142,8 +142,8 @@ check_env_variables:
 				fi \
 				;; \
 		esac; \
-	done
-	@value=$$(grep -E "^SEAWEEDFS_ALLOWED_CORS_ORIGINS=" $(ENV_FILE) | cut -d'=' -f2-); \
+	done; \
+	value=$$(grep -E "^SEAWEEDFS_ALLOWED_CORS_ORIGINS=" $(ENV_FILE) | cut -d'=' -f2-); \
 	if [ -n "$$value" ] && ! echo "$$value" | grep -Eq '^https://[^,[:space:]]+(,https://[^,[:space:]]+)*$$'; then \
 		echo "SEAWEEDFS_ALLOWED_CORS_ORIGINS must be a comma-separated list of https:// origins"; \
 		exit 1; \

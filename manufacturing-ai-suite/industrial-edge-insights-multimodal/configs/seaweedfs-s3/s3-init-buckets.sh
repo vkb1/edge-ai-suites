@@ -24,7 +24,8 @@ RETRY_COUNT=0
 MAX_RETRIES=30
 
 until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
-    if curl -s --connect-timeout 3 --max-time 5 "http://${WEED_FILER_ADDRESS}/healthz" > /dev/null 2>&1; then
+    if curl -s --connect-timeout 3 --max-time 5 "http://${WEED_FILER_ADDRESS}/healthz" > /dev/null 2>&1 \
+        || curl -s --connect-timeout 3 --max-time 5 "http://${WEED_FILER_ADDRESS}/" > /dev/null 2>&1; then
         echo "✓ Filer is accessible!"
         break
     fi
