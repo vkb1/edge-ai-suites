@@ -431,6 +431,7 @@ services:
     environment:
       - NO_PROXY=localhost,127.0.0.1,seaweedfs-master,seaweedfs-volume,seaweedfs-filer,seaweedfs-s3,172.16.0.0/12
       - no_proxy=localhost,127.0.0.1,seaweedfs-master,seaweedfs-volume,seaweedfs-filer,seaweedfs-s3,172.16.0.0/12
+      - WEED_CORS_ALLOWED_ORIGINS_VALUES=${SEAWEEDFS_ALLOWED_CORS_ORIGINS}
       - WEED_JWT_SIGNING_KEY=${SEAWEEDFS_JWT_SIGNING_KEY}
       - WEED_JWT_SIGNING_READ_KEY=${SEAWEEDFS_JWT_SIGNING_READ_KEY}
     command: master -ip=seaweedfs-master -ip.bind=0.0.0.0
@@ -453,6 +454,7 @@ services:
     environment:
       - NO_PROXY=localhost,127.0.0.1,seaweedfs-master,seaweedfs-volume,seaweedfs-filer,seaweedfs-s3,172.16.0.0/12
       - no_proxy=localhost,127.0.0.1,seaweedfs-master,seaweedfs-volume,seaweedfs-filer,seaweedfs-s3,172.16.0.0/12
+      - WEED_CORS_ALLOWED_ORIGINS_VALUES=${SEAWEEDFS_ALLOWED_CORS_ORIGINS}
       - WEED_JWT_SIGNING_KEY=${SEAWEEDFS_JWT_SIGNING_KEY}
       - WEED_JWT_SIGNING_READ_KEY=${SEAWEEDFS_JWT_SIGNING_READ_KEY}
     command: volume -mserver=seaweedfs-master:9333 -ip.bind=0.0.0.0 -port=8080
@@ -476,6 +478,7 @@ services:
     environment:
       - NO_PROXY=localhost,127.0.0.1,seaweedfs-master,seaweedfs-volume,seaweedfs-filer,seaweedfs-s3,172.16.0.0/12
       - no_proxy=localhost,127.0.0.1,seaweedfs-master,seaweedfs-volume,seaweedfs-filer,seaweedfs-s3,172.16.0.0/12
+      - WEED_CORS_ALLOWED_ORIGINS_VALUES=${SEAWEEDFS_ALLOWED_CORS_ORIGINS}
       - WEED_JWT_SIGNING_KEY=${SEAWEEDFS_JWT_SIGNING_KEY}
       - WEED_JWT_SIGNING_READ_KEY=${SEAWEEDFS_JWT_SIGNING_READ_KEY}
       - WEED_JWT_FILER_SIGNING_KEY=${SEAWEEDFS_FILER_JWT_SIGNING_KEY}
@@ -485,7 +488,7 @@ services:
       - seaweedfs-master
       - seaweedfs-volume
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888/healthz"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8888/healthz || curl -fsS http://localhost:8888/"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -514,6 +517,7 @@ services:
       - S3_BUCKET_TTL=${S3_BUCKET_TTL:-30m}
       - WEED_MASTER_ADDRESS=seaweedfs-master:9333
       - WEED_FILER_ADDRESS=seaweedfs-filer:8888
+      - WEED_CORS_ALLOWED_ORIGINS_VALUES=${SEAWEEDFS_ALLOWED_CORS_ORIGINS}
       - WEED_JWT_SIGNING_KEY=${SEAWEEDFS_JWT_SIGNING_KEY}
       - WEED_JWT_SIGNING_READ_KEY=${SEAWEEDFS_JWT_SIGNING_READ_KEY}
       - WEED_JWT_FILER_SIGNING_KEY=${SEAWEEDFS_FILER_JWT_SIGNING_KEY}

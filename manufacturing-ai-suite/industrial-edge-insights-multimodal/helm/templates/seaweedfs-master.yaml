@@ -70,13 +70,9 @@ spec:
           value: "localhost,127.0.0.1,{{ .Values.config.seaweedfs_filer.name }},{{ .Values.config.seaweedfs_volume.name }},{{ .Values.config.seaweedfs_master.name }},{{ .Values.config.seaweedfs_s3.name }},172.18.0.0/16"
         - name: no_proxy
           value: "localhost,127.0.0.1,{{ .Values.config.seaweedfs_master.name }},{{ .Values.config.seaweedfs_volume.name }},{{ .Values.config.seaweedfs_filer.name }},{{ .Values.config.seaweedfs_s3.name }},172.18.0.0/16"
-        - name: WEED_JWT_SIGNING_KEY
-          value: {{ .Values.env.SEAWEEDFS_JWT_SIGNING_KEY | quote }}
-        - name: WEED_JWT_SIGNING_READ_KEY
-          value: {{ .Values.env.SEAWEEDFS_JWT_SIGNING_READ_KEY | quote }}
       volumes:
       - name: vol-seaweed-master-data
         emptyDir: {}
       - name: seaweedfs-security-config
-        configMap:
+        secret:
           name: seaweedfs-security-config

@@ -67,6 +67,10 @@
           ],
           "description": "At least 10 alphanumeric, at least one digit."
         },
+        "SEAWEEDFS_ALLOWED_CORS_ORIGINS": {
+          "type": "string",
+          "description": "Comma-separated HTTPS origins allowed to reach SeaweedFS browser endpoints."
+        },
         "SEAWEEDFS_JWT_SIGNING_KEY": {
           "type": "string",
           "pattern": "^[A-Za-z0-9]{16,}$",

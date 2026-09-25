@@ -419,7 +419,6 @@ gen_helm_charts:
 	@sed -i 's/"auto_start": true,/"auto_start": false,/' helm/dlstreamer-pipeline-server.json
 	@cp -f configs/seaweedfs-s3/seaweedfs_s3_config.json.template helm/seaweedfs_s3_config.json.template
 	@cp -f configs/seaweedfs-s3/s3-init-buckets.sh helm/s3-init-buckets.sh
-	@cp -f configs/seaweedfs/security.toml helm/security.toml
 	@sed -i "s/version: .*/version: ${version}/" "helm/Chart.yaml"
 	@sed -i "s/appVersion: .*/appVersion: \"${version}\"/" "helm/Chart.yaml"
 	@sed -i "s/weekly_build_date: .*/weekly_build_date: \"$(WEEKLY_BUILD_DATE)\"/" "helm/values.yaml"
